@@ -177,16 +177,22 @@ a:hover{
           <i class="fas fa-question-circle"></i>
           <span class="nav-item">Help</span>
         </a></li>
-        <li><a href="" class="logout">
+        <li><a href="{% url 'logout' %}" class="logout">
           <i class="fas fa-sign-out-alt"></i>
-          <span class="nav-item">Log out</span>
+          <span class="nav-item">Logout</span>
+        </a></li>
+        <!-- <li><a href="" class="logout">
+          <i class="fas fa-sign-out-alt"></i>
+          <span class="nav-item">Log out</span> -->
+          <!-- <span class="nav-item">Log out</span> <a href="{% url 'logout' %}" class="nav-item">Log out</a> -->
+
         </a></li>
       </ul>
     </nav>
 
     <section class="main">
       <div class="main-top">
-        <h1>Time Series Analytics For E-commerce</h1>
+        <h1>Time Series Forcasting For E-commerce</h1>
         <i class="fas fa-user-cog"></i>
       </div>
      
