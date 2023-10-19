@@ -91,6 +91,13 @@ DATABASES = {
 		'PORT':'3306',
 	}
 }
+INFLUXDB_SETTINGS = {
+    'host': 'localhost',
+    'port': 8086,
+    'username': 'shreeys',
+    'password': 'your_password',
+    'database': 'your_database',
+}
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
 
