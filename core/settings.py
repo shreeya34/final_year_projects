@@ -91,12 +91,15 @@ DATABASES = {
 		'PORT':'3306',
 	}
 }
+
 INFLUXDB_SETTINGS = {
     'host': 'localhost',
     'port': 8086,
-    'username': 'shreeys',
-    'password': 'your_password',
-    'database': 'your_database',
+    'token': 'eBmkbvb5wdLb0jG4s7M-DXesqA5WKbO1KV2asIuGB3cL2ljqQy7rzzInyTMbvf2GfYlLRqSMOpVBLjgqt9hadw==',
+    'org': '93eb79fe52548977',
+    'bucket': 'amazon',
+    'username':'shreeys',
+    'password':'o6Rno7r5LF*$r%'
 }
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators

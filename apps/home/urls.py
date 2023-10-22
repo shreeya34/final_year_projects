@@ -12,6 +12,10 @@ urlpatterns = [
     path('', views.index, name='home'),
 
     # Matches any html file
-    re_path(r'^.*\.*', views.pages, name='pages'),
+    #
+
+    path("my-influx",views.get_influx_data,name="get_influx_data"),
+
+    re_path(r'^.*\.*', views.pages, name='pages')
 
 ]
