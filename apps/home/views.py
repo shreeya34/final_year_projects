@@ -78,11 +78,22 @@ def get_influx_data(request):
                 "fields": {
                     fields[0]: row[0],  # Use the first field name as a key
                     fields[1]: row[1],    # Use the second field name as a key
+                    fields[2] : row[2],
+                    fields[3] : row[3],
+                    fields[4] : row[4],
+                    
                 }
+        
             }
+             # Use the field names from the first row
+        for i, field_name in enumerate(fields):
+                if i > 0:  # Skip the first field (timestamp)
+                    data_point.field(field_name, row[i])
+
+   
             
-            write_api.write(bucket=BUCKET_NAME, org=ORG_NAME, record=data_point)
-            data_points.append(data_point)
+        write_api.write(bucket=BUCKET_NAME, org=ORG_NAME, record=data_point)
+        data_points.append(data_point)
 
 
         # Rest of your code remains the same for writing to InfluxDB
