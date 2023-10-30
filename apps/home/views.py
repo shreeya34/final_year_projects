@@ -14,6 +14,7 @@ import influxdb_client
 from influxdb_client.client.write_api import SYNCHRONOUS
 from django.conf import settings
 import csv
+from django.core.management.base import BaseCommand
 BUCKET_NAME = settings.INFLUXDB_SETTINGS['bucket']
 ORG_NAME = settings.INFLUXDB_SETTINGS['org']
 
@@ -101,3 +102,39 @@ def get_influx_data(request):
         # p = influxdb_client.Point("ecommerce_data").tag("amazon", "Prague").field("product_id", 1234)
         # write_api.write(bucket=BUCKET_NAME, org=ORG_NAME, record=p)
         return HttpResponse("check_ping")
+    
+
+
+class Command(BaseCommand):
+    help = 'Convert quoted string values to numerical data types'
+
+    def add_arguments(self, parser):
+        parser.add_argument('input_file', type=str, help='Input CSV file')
+        parser.add_argument('output_file', type=str, help='Output CSV file')
+
+    def handle(self, *args, **options):
+        input_file = options['input_file']
+        output_file = options['output_file']
+
+        with open(input_file, 'r') as infile, open(output_file, 'w', newline='') as outfile:
+            reader = csv.DictReader(infile)
+            fieldnames = reader.fieldnames
+
+            writer = csv.DictWriter(outfile, fieldnames=fieldnames)
+            writer.writeheader()
+
+            for row in reader:
+                # Convert quoted strings to numbers where applicable
+                for row[2] in fieldnames:
+                    if row[2].strip().isdigit():
+                        row[2] = int(row[2])
+                    else:
+                        try:
+                            row[2] = float(row[2])
+                        except (ValueError, TypeError):
+                            pass
+
+                writer.writerow(row)
+
+        self.stdout.write(self.style.SUCCESS(f'Conversion complete. Saved to {output_file}'))
+
