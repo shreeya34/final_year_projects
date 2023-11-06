@@ -97,7 +97,7 @@ INFLUXDB_SETTINGS = {
     'port': 8086,
     'token': 'eBmkbvb5wdLb0jG4s7M-DXesqA5WKbO1KV2asIuGB3cL2ljqQy7rzzInyTMbvf2GfYlLRqSMOpVBLjgqt9hadw==',
     'org': '93eb79fe52548977',
-    'bucket': 'amazon',
+    'bucket': 'new_amazon',
     'username':'shreeys',
     'password':'o6Rno7r5LF*$r%'
 }

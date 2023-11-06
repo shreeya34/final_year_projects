@@ -57,44 +57,59 @@ def get_influx_data(request):
     # check_health = influx_client.health()
     write_api = influx_client.write_api(write_options=SYNCHRONOUS)
 
-    csv_file = './amazon.csv'  # Replace with the path to your CSV file
-    csv_file = request.params
+    csv_file = 'amazon_final.csv'  # Replace with the path to your CSV file
+    # csv_file = request.params
     data_points = []
     fields = None  # Initialize fields as None
 
     with open(csv_file, 'r') as csvfile:
-        csv_reader = csv.reader(csvfile)
-
+        csv_reader = csv.DictReader(csvfile)
+        # Read the first row to get the tag names
+        tag_names = csv_reader.fieldnames
         # Read the first row to get field names
         fields = next(csv_reader)
 
         for row in csv_reader:
             # Use the field names from the first row
             data_point = {
-                "measurement": "ecommerce_data",
-                "tags": {
-                    "tag": 'amazon',  # Assuming the first column is a tag
-                },
-                # "time": row[2],  # Assuming the third column is the timestamp
-                "fields": {
-                    fields[0]: row[0],  # Use the first field name as a key
-                    fields[1]: row[1],    # Use the second field name as a key
-                    fields[2] : row[2],
-                    fields[3] : row[3],
-                    fields[4] : row[4],
-                    
-                }
-        
+                "measurement": "ecomm_data_new",
+                "tags": {tag: row[tag] for tag in tag_names},
+                "time": row["timestamp"],  # Change to the actual timestamp column name
+                "fields": {}
             }
-             # Use the field names from the first row
-        for i, field_name in enumerate(fields):
-                if i > 0:  # Skip the first field (timestamp)
-                    data_point.field(field_name, row[i])
+            # data_point = {
+            #     "measurement": "ecommerce_data",
+            #     "tags": {
+            #         "tag": 'amazon',  # Assuming the first column is a tag
+            #     },
+            #     "time": row["timestamp"],  # Assuming the third column is the timestamp
+            #     "fields": {
+            #         fields[0]: row[0],  # Use the first field name as a key
+            #         fields[1]: row[1],    # Use the second field name as a key
+            #         fields[2] : row[2],
+            #         fields[3] : row[3],
+            #         fields[4] : row[4],
+                    
+            #     }
+        
+            #}
+            # Exclude tags from fields
+            for field_name in row.keys():
+                if field_name != "timestamp":
+                    try:
+                        data_point["fields"][field_name] = float(row[field_name])
+                    except ValueError:
+                        data_point["fields"][field_name] = str(row[field_name])
+
+            #  # Use the field names from the first row
+            # for i, field_name in enumerate(fields):
+            #     if i > 0:  # Skip the first field (timestamp)
+            #         data_point.field(field_name, row[i])
 
    
-            
-        write_api.write(bucket=BUCKET_NAME, org=ORG_NAME, record=data_point)
-        data_points.append(data_point)
+
+            write_api.write(bucket=BUCKET_NAME, org=ORG_NAME, record=[data_point])
+        #data_points.append(data_point)
 
 
         # Rest of your code remains the same for writing to InfluxDB
