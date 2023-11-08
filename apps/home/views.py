@@ -97,9 +97,14 @@ def get_influx_data(request):
             for field_name in row.keys():
                 if field_name != "timestamp":
                     try:
-                        data_point["fields"][field_name] = float(row[field_name])
-                    except ValueError:
-                        data_point["fields"][field_name] = str(row[field_name])
+                        field_value = row[field_name]
+                        if field_name in ['discounted_price','actual_price','review']:
+                            field_value = float(field_value.replace(",",''))
+                        else:
+                            data_point["fields"][field_name] = str(field_value)
+                    except Exception as e:
+                        pass
+                        # data_point["fields"][field_name] = str(row[field_name])
 
             #  # Use the field names from the first row
             # for i, field_name in enumerate(fields):
@@ -107,8 +112,11 @@ def get_influx_data(request):
             #         data_point.field(field_name, row[i])
 
    
-
-            write_api.write(bucket=BUCKET_NAME, org=ORG_NAME, record=[data_point])
+            try:
+                write_api.write(bucket=BUCKET_NAME, org=ORG_NAME, record=[data_point])
+            except Exception as e:
+                print(e)
+                pass
         #data_points.append(data_point)
 
 
