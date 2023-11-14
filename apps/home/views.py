@@ -3,7 +3,9 @@
 Copyright (c) 2019 - present AppSeed.us
 """
 
+from datetime import datetime
 from django.conf import settings
+import pandas as pd
 from django import template
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseRedirect
@@ -14,6 +16,7 @@ import influxdb_client
 from influxdb_client.client.write_api import SYNCHRONOUS
 from django.conf import settings
 import csv
+from .models import get_product_info
 from django.core.management.base import BaseCommand
 BUCKET_NAME = settings.INFLUXDB_SETTINGS['bucket']
 ORG_NAME = settings.INFLUXDB_SETTINGS['org']
@@ -62,62 +65,96 @@ def get_influx_data(request):
     data_points = []
     fields = None  # Initialize fields as None
 
-    with open(csv_file, 'r') as csvfile:
-        csv_reader = csv.DictReader(csvfile)
-        # Read the first row to get the tag names
-        tag_names = csv_reader.fieldnames
-        # Read the first row to get field names
-        fields = next(csv_reader)
+    df = pd.read_csv('https://docs.google.com/spreadsheets/d/e/2PACX-1vSSEhTtI2vxjkI0FmnWcQZjWSYvu2aCNe5JyMSi7-_XjQrvNCedPyORKPjIO2t58OwHRsFPJPvA8yNo/pubhtml?gid=1994285997&single=true')
+    # Iterate over rows in the DataFrame and write data to InfluxDB
+    # Iterate over rows in the DataFrame and write data to InfluxDB
+    for _, row in df.iterrows():
+        # Convert timestamp to datetime
+        timestamp = datetime.strptime(row["timestamp"], "%Y-%m-%d %H:%M:%S")
+         # Use the field names from the first row
+        data_point = {
+            "measurement": "ecomm_data_new",
+            "tags": {tag: row[tag] for tag in df.columns if tag != 'timestamp'},
+            "time": timestamp,  # Change to the actual timestamp column name
+            "fields": {}
+        }
 
-        for row in csv_reader:
-            # Use the field names from the first row
-            data_point = {
-                "measurement": "ecomm_data_new",
-                "tags": {tag: row[tag] for tag in tag_names},
-                "time": row["timestamp"],  # Change to the actual timestamp column name
-                "fields": {}
-            }
-            # data_point = {
-            #     "measurement": "ecommerce_data",
-            #     "tags": {
-            #         "tag": 'amazon',  # Assuming the first column is a tag
-            #     },
-            #     "time": row["timestamp"],  # Assuming the third column is the timestamp
-            #     "fields": {
-            #         fields[0]: row[0],  # Use the first field name as a key
-            #         fields[1]: row[1],    # Use the second field name as a key
-            #         fields[2] : row[2],
-            #         fields[3] : row[3],
-            #         fields[4] : row[4],
+        # Iterate over columns in the DataFrame and add fields to the data point
+        for col_name, col_value in row.items():
+            # Convert column names to lowercase and replace spaces with underscores
+            field_name = col_name.lower().replace(" ", "_")
+            
+            # Check if the column value is a valid number
+            if pd.notna(col_value) and pd.to_numeric(col_value, errors="coerce") == col_value:
+                data_point["fields"][field_name] = float(col_value)
+            else:
+                data_point["fields"][field_name] = str(col_value)
+
+        try:
+            # Write the data point to InfluxDB
+            write_api.write(bucket=BUCKET_NAME, org=ORG_NAME, record=[data_point])
+        except Exception as e:
+            print(e)
+            pass
+            
+    # with open(csv_file, 'r') as csvfile:
+    #     csv_reader = csv.DictReader(csvfile)
+    #     # Read the first row to get the tag names
+    #     tag_names = csv_reader.fieldnames
+    #     # Read the first row to get field names
+    #     fields = next(csv_reader)
+    #     if '%' in fields['actual_price']:
+    #         print(fields)
+    
+    #     for row in csv_reader:
+    #         # Use the field names from the first row
+    #         data_point = {
+    #             "measurement": "ecomm_data_new",
+    #             "tags": {tag: row[tag] for tag in tag_names},
+    #             "time": row["timestamp"],  # Change to the actual timestamp column name
+    #             "fields": {}
+    #         }
+    #         # data_point = {
+    #         #     "measurement": "ecommerce_data",
+    #         #     "tags": {
+    #         #         "tag": 'amazon',  # Assuming the first column is a tag
+    #         #     },
+    #         #     "time": row["timestamp"],  # Assuming the third column is the timestamp
+    #         #     "fields": {
+    #         #         fields[0]: row[0],  # Use the first field name as a key
+    #         #         fields[1]: row[1],    # Use the second field name as a key
+    #         #         fields[2] : row[2],
+    #         #         fields[3] : row[3],
+    #         #         fields[4] : row[4],
                     
-            #     }
+    #         #     }
         
-            #}
-            # Exclude tags from fields
-            for field_name in row.keys():
-                if field_name != "timestamp":
-                    try:
-                        field_value = row[field_name]
-                        if field_name in ['discounted_price','actual_price','review']:
-                            field_value = float(field_value.replace(",",''))
-                        else:
-                            data_point["fields"][field_name] = str(field_value)
-                    except Exception as e:
-                        pass
-                        # data_point["fields"][field_name] = str(row[field_name])
+    #         #}
+    #         # Exclude tags from fields
+    #         for field_name in row.keys():
+    #             if field_name != "timestamp":
+    #                 try:
+    #                     field_value = row[field_name]
+    #                     if field_name in ['discounted_price','actual_price','review']:
+    #                         field_value = float(field_value.replace(",",''))
+    #                     else:
+    #                         data_point["fields"][field_name] = str(field_value)
+    #                 except Exception as e:
+    #                     pass
+    #                     # data_point["fields"][field_name] = str(row[field_name])
 
-            #  # Use the field names from the first row
-            # for i, field_name in enumerate(fields):
-            #     if i > 0:  # Skip the first field (timestamp)
-            #         data_point.field(field_name, row[i])
+    #         #  # Use the field names from the first row
+    #         # for i, field_name in enumerate(fields):
+    #         #     if i > 0:  # Skip the first field (timestamp)
+    #         #         data_point.field(field_name, row[i])
 
    
-            try:
-                write_api.write(bucket=BUCKET_NAME, org=ORG_NAME, record=[data_point])
-            except Exception as e:
-                print(e)
-                pass
-        #data_points.append(data_point)
+    #         try:
+    #             write_api.write(bucket=BUCKET_NAME, org=ORG_NAME, record=[data_point])
+    #         except Exception as e:
+    #             print(e)
+    #             pass
+    #     #data_points.append(data_point)
 
 
         # Rest of your code remains the same for writing to InfluxDB
