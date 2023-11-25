@@ -16,6 +16,8 @@ urlpatterns = [
 
     path("my-influx",views.get_influx_data,name="get_influx_data"),
     # path("numeric",views.get_mean_of_numeric_values,name="get_mean_of_numeric_values"),
+    path("get_product_data",views.get_data_view,name="get_data_view"),
+    
 
     re_path(r'^.*\.*', views.pages, name='pages')
 
