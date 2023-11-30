@@ -4,9 +4,11 @@ Copyright (c) 2019 - present AppSeed.us
 """
 
 from datetime import datetime
+import http
+from http import client
 from django.conf import settings
 from django.shortcuts import render
-import pandas as pd
+# import pandas as pd
 from django import template
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
@@ -16,8 +18,7 @@ from core.influx import influx_client
 import influxdb_client
 from influxdb_client.client.write_api import SYNCHRONOUS
 from django.conf import settings
-import csv
-    
+import csv   
 import requests
 from .models import get_product_info
 from django.core.management.base import BaseCommand
@@ -167,27 +168,33 @@ def get_influx_data(request):
         # p = influxdb_client.Point("ecommerce_data").tag("amazon", "Prague").field("product_id", 1234)
         # write_api.write(bucket=BUCKET_NAME, org=ORG_NAME, record=p)
         return HttpResponse("check_ping")
+   
 
 
-def get_influx_product_id():
-    query='''
-        from(bucket: "new_amazon")
-        |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
-        |> filter(fn: (r) => r["_measurement"] == "ecomm_data_new")
-        |> filter(fn: (r) => r["_field"] == "product_id")
-        |> count()
-        |> yield(name: "count")
-    '''
-    try:
-        response = influx_client.query_api(query_options=query)
-        if response.status_code == 200:
-            data = response.json()
-            return data
-        else:
-            return None  # Handle other status codes accordingly
-    except requests.exceptions.RequestException as e:
-        print("Request Exception:", e)
-        return None
+
+def get_influx_product_id(request,product_id): 
+    
+    # query = 'select new_amazon from ecomm_data_new;'
+    # # query_where = 'select new_amazon from ecomm_data_new where product_id=$product_id;'
+    # query_where= 'SELECT * FROM "ecomm_data_new"'
+    # bind_params = {'product_id': 'B07LDN9Q2P'}
+    
+    # print("Querying data: " + query_where)
+    # result = client.query(query_where, bind_params=bind_params)
+    # result = influxdb_client.Query(query=query_where)
+    query_api = influx_client.query_api()
+    query = 'from(bucket: "new_amazon")\
+            |> range(start: 2015-06-23T06:50:11.897825+00:00, stop: 2023-06-23T06:50:11.897825+00:00)\
+            |> filter(fn: (r) => r["_measurement"] == "ecomm_data_new")\
+            |> filter(fn: (r) => r["_field"] == "product_id")\
+            |> filter(fn: (r) => r["product_id"] == "B07LDN9Q2P")\
+            |> count()\
+            |> yield(name: "count")'
+
+    result = query_api.query(query=query)
+    print("Result: {0}".format(result))
+
+    return HttpResponse(f"You're viewing product: {product_id}")
 
 
 def get_data_view(request):
