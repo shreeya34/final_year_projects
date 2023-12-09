@@ -3,9 +3,10 @@
 Copyright (c) 2019 - present AppSeed.us
 """
 
-from datetime import datetime
+from datetime import datetime, timedelta
 import http
 from http import client
+import random
 from django.conf import settings
 from django.shortcuts import render
 # import pandas as pd
@@ -167,9 +168,34 @@ def get_influx_data(request):
 
         # p = influxdb_client.Point("ecommerce_data").tag("amazon", "Prague").field("product_id", 1234)
         # write_api.write(bucket=BUCKET_NAME, org=ORG_NAME, record=p)
-        return HttpResponse("check_ping")
+    return HttpResponse("check_ping")
    
 
+def get_sample_influx_data(request):
+    data = []
+    write_api = influx_client.write_api(write_options=SYNCHRONOUS)
+
+    start_time = datetime(2023, 1, 1)  # Change the start date as needed
+    sku_list = ['SKU001', 'SKU002', 'SKU003']  # List of sample SKUs
+    item_names = ['Item A', 'Item B', 'Item C']  # List of sample item names
+    for i in range(100):
+        timestamp = start_time + timedelta(days=i)
+        sku = random.choice(sku_list)
+        item_name = item_names[sku_list.index(sku)]  # Match SKU to item name
+        actual_price = random.uniform(10, 1000)  # Generating random prices
+        data_point = {
+            "measurement": "amazon_data",
+            "time": timestamp.isoformat(),
+            "fields": {
+                "actual_price": actual_price,
+                "sku": sku,
+                "item_name": item_name
+            }
+        }
+        write_api.write(bucket=BUCKET_NAME, org=ORG_NAME, record=[data_point])
+
+        # data.append(data_point)
+    return HttpResponse("check_ping 2")
 
 
 def get_influx_product_id(request,product_id): 
