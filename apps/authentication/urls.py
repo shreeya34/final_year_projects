@@ -12,5 +12,5 @@ urlpatterns = [
     path('register/', register_user, name="register"),
     path("logout/", LogoutView.as_view(), name="logout"),
     path("ForgetPassword/",ForgetPassword,name="ForgetPassword"),
-    path('change_password/<token>',ChangePassword,name="change_password")
+    path('change_password/<token>/',ChangePassword,name="change_password")
 ]

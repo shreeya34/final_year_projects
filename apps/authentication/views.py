@@ -70,6 +70,9 @@ def ForgetPassword(request):
                 return redirect('/forgetPassword')
             user_obj = User.objects.get(username=username)
             token = str(uuid.uuid4())
+            profile_obj = Profile.objects.get(user=user_obj)
+            profile_obj.forget_password_token =token
+            profile_obj.save()
             send_forget_password_mail(user_obj, token)
             messages.success(request,'An email is send')
             return redirect('/forgetPassword/')
@@ -82,12 +85,33 @@ def ForgetPassword(request):
 def ChangePassword(request,token):
     contex = {}
     try:
-        profile_obj=Profile.objects.get(forget_password_token = token)
-        print(profile_obj)
+        profile_obj=Profile.objects.filter(forget_password_token = token)
+        contex = {'user_id': profile_obj.user_id}
+        
+        if request.method == 'POST':
+            new_password = request.POST.get('new_Password')
+            confirm_password = request.POST.get('confirm_password')
+            user_id = request.POST.get('user_id')
+            
+            if user_id is None:
+                  msg = 'No user id found'
+                  return redirect('/change_password/')
+              
+            if new_password!= confirm_password:
+                messages.success(request, 'both should be equal')
+                return redirect(f'/change_password/{token}')
+            
+            user_id = User.objects.get(id = user_id)
+            user_id.set_password(new_password)
+            user_id.save()
+            return redirect('/login/')
+                
+        
+        
         
     except Exception as e:
         print(e)
-    return render(request,'change_password.html')
+    return render(request,'accounts/change_password.html',contex)
     
     
             
