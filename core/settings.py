@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'apps.authentication',
     'apps.home'  # Enable the inner home (home)
 ]
 
@@ -77,6 +78,15 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
+# settings.py
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_USE_TLS = True
+EMAIL_PORT = 587
+EMAIL_HOST_USER ='1shreeya2@gmail.com'  # Your Gmail email address
+EMAIL_HOST_PASSWORD ='foes otbd yzyz svbl'
+
+DEFAULT_AUTO_FIELD='django.db.models.AutoField' 
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
@@ -149,9 +159,6 @@ STATICFILES_DIRS = (
 #############################################################
 #############################################################
 
-EMAIL_BACKEND = 'django.core.mail.backend.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_USE_TLS = True
-EMAIL_PORT = 587
+
 
 
