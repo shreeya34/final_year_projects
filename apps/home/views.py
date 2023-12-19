@@ -71,48 +71,81 @@ def get_influx_data(request):
     # # csv_file = request.params
     data_points = []
     fields = None  # Initialize fields as None
-
-            
-    with open(csv_file, 'r') as csvfile:
-        csv_reader = csv.DictReader(csvfile)
-        # Read the first row to get the tag names
-        tag_names = csv_reader.fieldnames
-        # Read the first row to get field names
-        fields = next(csv_reader)
-        # if '%' in fields['actual_price']:
-        #     fields['actual_price'] = fields['actual_price'].replace("%",'')
-        #     print(fields)
-    
+    with open(csv_file, 'r') as file:
+        csv_reader = csv.DictReader(file)
         for row in csv_reader:
-            # Use the field names from the first row
-            data_point = {
-                "measurement": "ecomm_data_new",
-                "tags": {tag: row[tag] for tag in tag_names},
-                "timestamps": row["_time"],  # Change to the actual timestamp column name
-               
-                "fields": {}
-            }
-         
-            for field_name in row.keys():
-                if field_name != "_time":
-                    try:
-                        field_value = row[field_name]
-                        if field_name in ['discounted_price','actual_price','review']:
-                            field_value = float(field_value.replace(",",''))
-                        else:
+            # Create a Point for each row in the CSV
+            point = influxdb_client.Point(row['_measurement']) \
+                .tag("asin", row['asin']) \
+                .tag("product_name", row['product_name']) \
+                .field(row['_field'], float(row['_value'])) \
+                .time(row['_time'], influxdb_client.WritePrecision.NS)
+            try:
+                # Write the point to the specified bucket
+                write_api.write(bucket=BUCKET_NAME, org=ORG_NAME, record=point)
+            except Exception as e:
+                print(f"Failed to write: {e}")
+
+    return JsonResponse({'success':True, 'message':"Data Written Succesfully to Influx"})
+            
+    # with open(csv_file, 'r') as csvfile:
+    #     csv_reader = csv.DictReader(csvfile)
+    #     csv_reader = csv.reader(filter(lambda row: not row.startswith('#'), csvfile))
+    #     # Read the first row to get the tag names
+    #     # tag_names = csv_reader.fieldnames
+    #     # Read the first row to get field names
+    #     fields = next(csv_reader)
+    #     # if '%' in fields['actual_price']:
+    #     #     fields['actual_price'] = fields['actual_price'].replace("%",'')
+    #     #     print(fields)
+       
+    #     for row in csv_reader:
+    #         timestamps = row[3]
+            
+    #         data_point = {
+    #             "measurement": "ecommerce_products",
+    #             "tags": {'asin','product_name'},
+    #             "timestamps": timestamps, 
+    #             # "timestamps" : row[3],
+                 
+    #             "fields": {}
+    #         }
+       
+    #         print(timestamps)
+    # #         for field_name in row.keys():
+    # #             if field_name != "_time":
+    # #                 try:
+    # #                     field_value = row[field_name]
+    # #                     if field_name in ['_time','result','table']:
+    # #                         field_value = float(field_value.replace(",",''))
+    # #                     else:
                      
-                            data_point["fields"][field_name] = str(field_value)
-                    except Exception as e:
-                        print(e)
-                        pass
+    # #                         data_point["fields"][field_name] = field_value
+    # #                 except Exception as e:
+    # #                     print(e)
+    # #                     pass
 
    
-            try:
-                write_api.write(bucket=BUCKET_NAME, org=ORG_NAME, record=[data_point])
-            except Exception as e:
-                print(e)
-                pass
-    return HttpResponse("check_ping")
+    # #         try:
+    # #             write_api.write(bucket=BUCKET_NAME, org=ORG_NAME, record=data_point)
+    # #         except Exception as e:
+    # #             print(e)
+    # #             pass
+    # # return HttpResponse("check_ping")
+    #     for index, field_name in enumerate(fields):
+    #             if field_name not in ["_time", "result", "table"]:
+    #                 try:
+    #                     field_value = row[index]
+    #                     if field_name == 'actual_price' and '%' in field_value:
+    #                         field_value = field_value.replace("%", "")
+    #                     data_point["fields"][field_name] = field_value
+    #                 except Exception as e:
+    #                     print(e)
+            
+    #     try:
+    #             write_api.write(bucket=BUCKET_NAME, org=ORG_NAME, record=data_point)
+    #     except Exception as e:
+    #             print(e)
    
 def get_influx_product_id(request,product_id): 
     
