@@ -95,11 +95,10 @@ def search_products(request):
     
     query_api = influx_client.query_api()
     query = 'from(bucket: "new_amazon")\
-            |> range(start: 2013-11-19T08:49:26.897825+00:00, stop: 2023-12-30T08:49:26.897825+00:00)\
+            |> range(start: 2013-12-13T08:49:26.897825+00:00, stop: 2023-12-30T08:49:26.897825+00:00)\
             |> filter(fn: (r) => r["_measurement"] == "ecommerce_products")\
             |> filter(fn: (r) => r["_field"] == "actual_price")\
             |> filter(fn: (r) => r["asin"] == "{}")\
-            |> mean()\
             |> yield(name: "mean")'.format(asin)
             
           

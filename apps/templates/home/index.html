@@ -34,14 +34,21 @@
 {% block javascripts %}
 
 <script>
-    // $(document).ready(function () {
-    //     // Javascript method's body can be found in assets/js/demos.js
-    //     // demo.initDashboardPageCharts();
+    $(document).ready(function () {
+        // Javascript method's body can be found in assets/js/demos.js
+        // demo.initDashboardPageCharts();
+        const urlParams = new URLSearchParams(window.location.search);
+        let asin = urlParams.get('asin');
+        if(asin){
+            return fetchDataAndCreateChart(asin);
+        }
+        return fetchDataAndCreateChart("TLM0100");        
+    });
 
-    // });
-    async function fetchDataAndCreateChart() {
+
+    async function fetchDataAndCreateChart(asin) {
         try {
-            const response = await fetch("/search?asin=TLM0101"); // Replace with your API endpoint
+            const response = await fetch(`/search?asin=${asin}`); // Replace with your API endpoint
             const jsonData = await response.json();
             console.log(jsonData);
             
@@ -119,7 +126,10 @@
             datasets: [{
                     label: '# of Votes',
                     data: chartData,
-                    borderWidth: 1
+                    borderWidth: 1,
+                    backgroundColor: {
+                        fill: '#FFC0CB'
+},
             }]
                 },
             options: gradientChartOptionsConfigurationWithTooltipPurple
@@ -131,7 +141,6 @@
         }
     } 
 
-    fetchDataAndCreateChart();
 
 
     
