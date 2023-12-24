@@ -67,31 +67,7 @@ def register_user(request):
     return render(request, "accounts/register.html", {"form": form, "msg": msg, "success": success})
 
 
-# def ForgetPassword(request):
-#     try:
-#         if request.method == 'POST':
-#             username = request.POST.get('username')
-            
-#             if not User.objects.filter(username=username).first():
-#                 messages.success(request, 'Not user found with this username.')
-#                 return redirect('/forget-password/')
-            
-#             user_obj = User.objects.get(username = username)
-#             token = str(uuid.uuid4())
-#             profile_obj= Profile.objects.get_or_create(user = user_obj)
-#             profile_obj.forget_password_token = token
-#             profile_obj.save()
-#             send_email = send_forget_password_mail(user_obj.email , token)
-#             if send_email:
-#                 messages.success(request, 'An email is sent.')
-#                 return redirect('/forget-password/')
-#             else:
-#                 messages.info(request, message='Something went Wrong.')
-#             return redirect('/forget-password/')
-            
-#     except Exception as e:
-#         print(e)
-#     return render(request , 'accounts/forgetPassword.html')
+
 
 from django.shortcuts import get_object_or_404
 
@@ -123,26 +99,33 @@ def ForgetPassword(request):
             
             send_email = send_forget_password_mail(user_obj.email, token)
             
-            if send_email:
-                messages.success(request, 'An email is sent.')
-            else:
-                messages.info(request, message='Something went wrong while sending the email.')
+            # if send_email:
+            #     messages.success(request, 'An email is sent.')
+            # else:
+            #     messages.info(request, message='Something went wrong while sending the email.')
             
-            return redirect('/forget-password/')
+            # return redirect('/forget-password/')
             
     except Exception as e:
         print(e)
     
     return render(request, 'accounts/forgetPassword.html')
 
+def user_profile(request):
+    
+    return render(request, 'home/user.html')
+
+def ForgetPasswordPage(request):
+    
+    return (request, '/home/accounts/change_password.html')
 
 def ChangePassword(request , token):
     context = {}
     
-    
     try:
         profile_obj = Profile.objects.filter(forget_password_token = token).first()
         context = {'user_id' : profile_obj.user.id}
+        print(request.method)
         
         if request.method == 'POST':
             new_password = request.POST.get('new_password')
@@ -153,20 +136,22 @@ def ChangePassword(request , token):
                 messages.success(request, 'No user id found.')
                 return redirect(f'/change_password/{token}/')
                 
-            
             if  new_password != confirm_password:
                 messages.success(request, 'both should  be equal.')
                 return redirect(f'/change_password/{token}/')
-                         
             
             user_obj = User.objects.get(id = user_id)
             user_obj.set_password(new_password)
             user_obj.save()
+            
             return redirect('accounts/login/')
                     
     except Exception as e:
         print(e)
+        
     return render(request , 'accounts/change_password.html' , context)
+
+
 
 
 

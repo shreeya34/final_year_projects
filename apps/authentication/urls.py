@@ -6,7 +6,7 @@ Copyright (c) 2019 - present AppSeed.us
 
 from django import views
 from django.urls import path
-from .views import ChangePassword, ForgetPassword, login_view, register_user
+from .views import ChangePassword, ForgetPassword, login_view, register_user, user_profile
 from django.contrib.auth.views import LogoutView
 
 urlpatterns = [
@@ -15,6 +15,5 @@ urlpatterns = [
     path("logout/", LogoutView.as_view(), name="logout"),
     path("forget-password/",ForgetPassword,name="ForgetPassword"),
     path('change-password/<token>/',ChangePassword,name="change_password"),
-    
-  
+    path('profile/', user_profile, name='user_profile'),
 ]

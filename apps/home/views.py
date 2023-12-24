@@ -88,103 +88,50 @@ def get_influx_data(request):
 
     return JsonResponse({'success':True, 'message':"Data Written Succesfully to Influx"})
             
-    # with open(csv_file, 'r') as csvfile:
-    #     csv_reader = csv.DictReader(csvfile)
-    #     csv_reader = csv.reader(filter(lambda row: not row.startswith('#'), csvfile))
-    #     # Read the first row to get the tag names
-    #     # tag_names = csv_reader.fieldnames
-    #     # Read the first row to get field names
-    #     fields = next(csv_reader)
-    #     # if '%' in fields['actual_price']:
-    #     #     fields['actual_price'] = fields['actual_price'].replace("%",'')
-    #     #     print(fields)
-       
-    #     for row in csv_reader:
-    #         timestamps = row[3]
-            
-    #         data_point = {
-    #             "measurement": "ecommerce_products",
-    #             "tags": {'asin','product_name'},
-    #             "timestamps": timestamps, 
-    #             # "timestamps" : row[3],
-                 
-    #             "fields": {}
-    #         }
-       
-    #         print(timestamps)
-    # #         for field_name in row.keys():
-    # #             if field_name != "_time":
-    # #                 try:
-    # #                     field_value = row[field_name]
-    # #                     if field_name in ['_time','result','table']:
-    # #                         field_value = float(field_value.replace(",",''))
-    # #                     else:
-                     
-    # #                         data_point["fields"][field_name] = field_value
-    # #                 except Exception as e:
-    # #                     print(e)
-    # #                     pass
+   
+def search_products(request): 
 
-   
-    # #         try:
-    # #             write_api.write(bucket=BUCKET_NAME, org=ORG_NAME, record=data_point)
-    # #         except Exception as e:
-    # #             print(e)
-    # #             pass
-    # # return HttpResponse("check_ping")
-    #     for index, field_name in enumerate(fields):
-    #             if field_name not in ["_time", "result", "table"]:
-    #                 try:
-    #                     field_value = row[index]
-    #                     if field_name == 'actual_price' and '%' in field_value:
-    #                         field_value = field_value.replace("%", "")
-    #                     data_point["fields"][field_name] = field_value
-    #                 except Exception as e:
-    #                     print(e)
-            
-    #     try:
-    #             write_api.write(bucket=BUCKET_NAME, org=ORG_NAME, record=data_point)
-    #     except Exception as e:
-    #             print(e)
-   
-def get_influx_product_id(request,product_id): 
+    asin = request.GET.get('asin')
     
-    # query = 'select new_amazon from ecomm_data_new;'
-    # # query_where = 'select new_amazon from ecomm_data_new where product_id=$product_id;'
-    # query_where= 'SELECT * FROM "ecomm_data_new"'
-    # bind_params = {'product_id': 'B07LDN9Q2P'}
-    
-    # print("Querying data: " + query_where)
-    # result = client.query(query_where, bind_params=bind_params)
-    # result = influxdb_client.Query(query=query_where)
     query_api = influx_client.query_api()
     query = 'from(bucket: "new_amazon")\
-            |> range(start: 2015-06-23T06:50:11.897825+00:00, stop: 2023-06-23T06:50:11.897825+00:00)\
-            |> filter(fn: (r) => r["_measurement"] == "ecomm_data_new")\
-            |> filter(fn: (r) => r["_field"] == "product_id")\
-            |> filter(fn: (r) => r["product_id"] == "B07LDN9Q2P")\
-            |> count()\
-            |> yield(name: "count")'
+            |> range(start: 2013-11-19T08:49:26.897825+00:00, stop: 2023-12-30T08:49:26.897825+00:00)\
+            |> filter(fn: (r) => r["_measurement"] == "ecommerce_products")\
+            |> filter(fn: (r) => r["_field"] == "actual_price")\
+            |> filter(fn: (r) => r["asin"] == "{}")\
+            |> mean()\
+            |> yield(name: "mean")'.format(asin)
+            
+          
 
-    result = query_api.query(query=query)
-    print("Result: {0}".format(result))
+    result = query_api.query(query=query,org='93eb79fe52548977')
+    json_data = []
+    for table in result:
+        for record in table.records:
+            record_dict = record.values
+            json_data.append(record_dict)
+    
+    print("Result: {0}".format(json_data))
+    return JsonResponse(data=json_data,safe=False)
 
-    return HttpResponse(f"You're viewing product: {product_id}")
+    # return HttpResponse(f"You're viewing product: {asin}")
 
 
 def get_data_view(request):
-   influx_data = get_influx_product_id()
+   asin = request.GET.get('asin')
+   if asin:
+         influx_data = search_products(request,asin)
    if influx_data:
         # Process the data or return it as JsonResponse
-        timestamps = []
+        _time = []
         values = []
         # Assuming the structure of the returned data is in a suitable format for plotting
         for point in influx_data['results'][0]['series'][0]['values']:
-            timestamps.append(point[0])  # Assuming timestamp is the first element
+            _time.append(point[0])  # Assuming timestamp is the first element
             values.append(point[1])  # Assuming the value is the second element
 
         return render(request, 'home.html', {
-            'timestamps': timestamps,
+            'timestamps': _time,
             'values': values,
         })
    else:

@@ -17,7 +17,7 @@ urlpatterns = [
     path("my-influx",views.get_influx_data,name="get_influx_data"),
     # path("numeric",views.get_mean_of_numeric_values,name="get_mean_of_numeric_values"),
     path("get_product_data",views.get_data_view,name="get_data_view"),
-    path("products/<str:product_id>",views.get_influx_product_id,name="get_influx_product_id"),
+    path("search",views.search_products,name="search_products"),
     re_path(r'^.*\.*', views.pages, name='pages')
 
 ]
