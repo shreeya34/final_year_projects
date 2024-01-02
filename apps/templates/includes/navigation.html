@@ -1,4 +1,5 @@
-        <!-- Navbar -->
+        <!-- Navbar -->\
+        
     
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css">
         <nav class="navbar navbar-expand-lg navbar-absolute navbar-transparent">
@@ -31,21 +32,32 @@
                             <li class="search-bar input-group">
                                 <input type="text" name="asin" placeholder="Search..." class="form-control">
                                 <button type="submit" class="btn btn-link" id="search-button">
-                                    <i class="tim-icons icon-zoom-split"></i>
+                                    <!-- <i class="tim-icons icon-zoom-split"></i> -->
                                     <span class="d-lg-none d-md-block">Search</span>
                                 </button>
                             </li>
                         </form>
-                        <li class="dropdown nav-item">
+                        <!-- <li class="dropdown nav-item">
                             <a href="javascript:void(0)" class="dropdown-toggle nav-link" data-toggle="dropdown">
-                                <div class="notification d-none d-lg-block d-xl-block"></div>
-                                <i class="bi bi-download"></i>
-                                <p class="d-lg-none">
-                                    CSV file
-                                </p>
+                                <i class="bi bi-upload" id="uploadIcon"></i>
+                                <p class="d-lg-none">CSV file</p>
                             </a>
+                        </li> -->
+
                         
-                        </li>
+                        <div class="upload-btn-wrapper">
+                            <form id="upload-form" method="post" enctype="multipart/form-data">
+                                <label for="file-upload" class="btn">Upload CSV</label>
+                                <input id="file-upload" type="file" name="file" style="display: none;">
+                                
+                            </form>
+                        </div>
+                        <script>
+                            document.getElementById('file-upload').addEventListener('change', function() {
+                                document.getElementById('upload-form').submit();
+                            });
+                        </script>
+                 
                         <li class="dropdown nav-item">
                             <a href="#" class="dropdown-toggle nav-link" data-toggle="dropdown">
                                 <div class="photo">
@@ -85,5 +97,6 @@
                 </div>
             </div>
         </div>
-        <!-- End Navbar -->
+
+        
         

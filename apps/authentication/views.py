@@ -4,8 +4,10 @@ Copyright (c) 2019 - present AppSeed.us
 """
 
 # Create your views here.
+
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login
+
 
 # from apps.authentication.models import Profile
 
@@ -15,6 +17,7 @@ from django.contrib import messages
 from django.contrib.auth.models import User
 from .helper import send_forget_password_mail
 from django.views import View
+from .models import *
 
 
 import uuid
@@ -150,6 +153,28 @@ def ChangePassword(request , token):
         print(e)
         
     return render(request , 'accounts/change_password.html' , context)
+
+# file_upload_app/views.py
+from django.shortcuts import render
+from .forms import CSVUploadForm
+from django.views.decorators.csrf import csrf_protect
+import pandas as pd 
+
+def create_db(file_path):
+    df = pd.read_csv(file_path, delimiter=',')
+    list_of_csv = [list(row)for row in df.values]
+    print(list_of_csv)
+    
+   
+
+def csv_upload_view(request):
+    if request.method =="POST":
+        file = request.FILES['file']
+        obj=File.objects.create(file=file)
+        create_db(obj.file)
+    return render (request,'includes/navigation.html')
+            
+        
 
 
 

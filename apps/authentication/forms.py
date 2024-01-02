@@ -58,3 +58,8 @@ class SignUpForm(UserCreationForm):
     class Meta:
         model = User
         fields = ('username', 'email', 'password1', 'password2')
+# file_upload_app/forms.py
+from django import forms
+
+class CSVUploadForm(forms.Form):
+    csvfile = forms.FileField(label='Select a CSV file')
