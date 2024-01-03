@@ -6,6 +6,7 @@ Copyright (c) 2019 - present AppSeed.us
 from datetime import datetime, timedelta
 import http
 from http import client
+import os
 import random
 from django.conf import settings
 from django.shortcuts import render
@@ -92,6 +93,7 @@ def get_influx_data(request):
 def search_products(request): 
 
     asin = request.GET.get('asin')
+    product_name = request.GET.get('product_name')
     
     query_api = influx_client.query_api()
     query = 'from(bucket: "new_amazon")\
@@ -99,7 +101,7 @@ def search_products(request):
             |> filter(fn: (r) => r["_measurement"] == "ecommerce_products")\
             |> filter(fn: (r) => r["_field"] == "actual_price")\
             |> filter(fn: (r) => r["asin"] == "{}")\
-            |> yield(name: "mean")'.format(asin)
+            |> yield(name: "mean")'.format(asin,product_name)
             
           
 
@@ -135,7 +137,45 @@ def get_data_view(request):
         })
    else:
         return JsonResponse({'error': 'Failed to fetch data from InfluxDB'}, status=500)
+    
+def handle_uploaded_file(uploaded_file):
+    destination_directory = os.path.join(settings.BASE_DIR, 'uploads')  # Adjust as needed
 
+    # Ensure the destination directory exists; create if it doesn't
+    os.makedirs(destination_directory, exist_ok=True)
+
+    # Define the file path in the destination directory
+    destination_file_path = os.path.join(destination_directory, uploaded_file.name)
+    # Move the uploaded file to the destination directory
+    with open(destination_file_path, 'wb') as destination:
+        for chunk in uploaded_file.chunks():
+            destination.write(chunk)
+    return destination_file_path
+
+    
+def upload_to_influxdb(request):
+    if request.method == 'POST' and request.FILES['file']:
+        uploaded_file = request.FILES['file']
+        csv_file_path = handle_uploaded_file(uploaded_file)
+        write_api = influx_client.write_api(write_options=SYNCHRONOUS)
+
+        # Process CSV data and prepare for InfluxDB
+        with open(csv_file_path, 'r') as file:
+            csv_reader = csv.DictReader(file)
+            for row in csv_reader:
+                # Create a Point for each row in the CSV
+                point = influxdb_client.Point(row['_measurement']) \
+                    .tag("asin", row['asin']) \
+                    .tag("product_name", row['product_name']) \
+                    .field(row['_field'], float(row['_value'])) \
+                    .time(row['_time'], influxdb_client.WritePrecision.NS)
+                try:
+                    # Write the point to the specified bucket
+                    write_api.write(bucket=BUCKET_NAME, org=ORG_NAME, record=point)
+                except Exception as e:
+                    print(f"Failed to write: {e}")
+
+        return JsonResponse({'success':True, 'message':"Your File is Successfully Uploaded! Please query"})
 
 
 class Command(BaseCommand):

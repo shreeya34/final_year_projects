@@ -16,6 +16,6 @@ urlpatterns = [
     path("forget-password/",ForgetPassword,name="ForgetPassword"),
     path('change-password/<token>/',ChangePassword,name="change_password"),
     path('profile/', user_profile, name='user_profile'),
-    path('upload/', csv_upload_view, name='csv_upload'),
+    path('upload/', csv_upload_view, name='csv_upload_view'),
     
 ]

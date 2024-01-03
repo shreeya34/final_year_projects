@@ -172,7 +172,7 @@ def csv_upload_view(request):
         file = request.FILES['file']
         obj=File.objects.create(file=file)
         create_db(obj.file)
-    return render (request,'includes/navigation.html')
+    return render (request,'home/index.html')
             
         
 
