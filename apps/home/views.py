@@ -9,7 +9,7 @@ from http import client
 import os
 import random
 from django.conf import settings
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 # import pandas as pd
 from django import template
 from django.contrib.auth.decorators import login_required
@@ -25,6 +25,7 @@ import requests
 from .models import get_product_info
 from django.core.management.base import BaseCommand
 import datetime
+from django.contrib import messages
 BUCKET_NAME = settings.INFLUXDB_SETTINGS['bucket']
 ORG_NAME = settings.INFLUXDB_SETTINGS['org']
 
@@ -86,6 +87,7 @@ def get_influx_data(request):
                 write_api.write(bucket=BUCKET_NAME, org=ORG_NAME, record=point)
             except Exception as e:
                 print(f"Failed to write: {e}")
+        
 
     return JsonResponse({'success':True, 'message':"Data Written Succesfully to Influx"})
             
@@ -95,15 +97,29 @@ def search_products(request):
     asin = request.GET.get('asin')
     product_name = request.GET.get('product_name')
     
+    
     query_api = influx_client.query_api()
-    query = 'from(bucket: "new_amazon")\
+    if asin:
+        query = 'from(bucket: "new_amazon")\
             |> range(start: 2013-12-13T08:49:26.897825+00:00, stop: 2023-12-30T08:49:26.897825+00:00)\
             |> filter(fn: (r) => r["_measurement"] == "ecommerce_products")\
             |> filter(fn: (r) => r["_field"] == "actual_price")\
             |> filter(fn: (r) => r["asin"] == "{}")\
-            |> yield(name: "mean")'.format(asin,product_name)
+            |> yield(name: "mean")'.format(asin)
             
-          
+    elif product_name:
+        query = 'from(bucket: "new_amazon")\
+             |> range(start: 2013-12-13T08:49:26.897825+00:00, stop: 2023-12-30T08:49:26.897825+00:00)\
+            |> filter(fn: (r) => r["_measurement"] == "ecommerce_products")\
+            |> filter(fn: (r) => r["_field"] == "actual_price")\
+            |> filter(fn: (r) => r["asin"] == "{}")\
+            |> filter(fn: (r) => r["product_name"] == "{}")\
+            |> yield(name: "mean")'.format(product_name)
+            
+            
+
+    else:
+        return JsonResponse({'error': 'No search parameter provided'}, status=400)     
 
     result = query_api.query(query=query,org='93eb79fe52548977')
     json_data = []
@@ -120,8 +136,14 @@ def search_products(request):
 
 def get_data_view(request):
    asin = request.GET.get('asin')
-   if asin:
-         influx_data = search_products(request,asin)
+   product_name = request.GET.get('product_name')
+  
+   if asin or product_name:
+         influx_data = search_products(request)
+         
+   else:
+        return JsonResponse({'error': 'No search parameter provided'}, status=400)
+  
    if influx_data:
         # Process the data or return it as JsonResponse
         _time = []
@@ -136,7 +158,8 @@ def get_data_view(request):
             'values': values,
         })
    else:
-        return JsonResponse({'error': 'Failed to fetch data from InfluxDB'}, status=500)
+       
+       return JsonResponse({'error': 'Failed to fetch data from InfluxDB'}, status=500)
     
 def handle_uploaded_file(uploaded_file):
     destination_directory = os.path.join(settings.BASE_DIR, 'uploads')  # Adjust as needed
@@ -163,6 +186,11 @@ def upload_to_influxdb(request):
         with open(csv_file_path, 'r') as file:
             csv_reader = csv.DictReader(file)
             for row in csv_reader:
+                if '_measurement' not in row:
+                    messages.warning(request, "Unsupported file: No measurement found.")
+                    return redirect('/')
+               
+                  
                 # Create a Point for each row in the CSV
                 point = influxdb_client.Point(row['_measurement']) \
                     .tag("asin", row['asin']) \
@@ -174,8 +202,12 @@ def upload_to_influxdb(request):
                     write_api.write(bucket=BUCKET_NAME, org=ORG_NAME, record=point)
                 except Exception as e:
                     print(f"Failed to write: {e}")
-
-        return JsonResponse({'success':True, 'message':"Your File is Successfully Uploaded! Please query"})
+        messages.success(request,"Your File is Successfully Uploaded!")
+        return redirect('/')
+            
+# return JsonResponse({'success':True, 'message':"Your File is Successfully Uploaded!"})
+    return render('/templates/includes/navigation.html') 
+       
 
 
 class Command(BaseCommand):

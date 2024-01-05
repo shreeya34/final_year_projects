@@ -158,7 +158,7 @@ def ChangePassword(request , token):
 from django.shortcuts import render
 from .forms import CSVUploadForm
 from django.views.decorators.csrf import csrf_protect
-import pandas as pd 
+
 
 def create_db(file_path):
     df = pd.read_csv(file_path, delimiter=',')
