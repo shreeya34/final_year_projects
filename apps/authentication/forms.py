@@ -63,3 +63,4 @@ from django import forms
 
 class CSVUploadForm(forms.Form):
     csvfile = forms.FileField(label='Select a CSV file')
+  

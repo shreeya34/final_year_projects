@@ -1,6 +1,8 @@
        
-       
+        <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css">
+        <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+        
         <nav class="navbar navbar-expand-lg navbar-absolute navbar-transparent">
             <div class="container-fluid">
                 <div class="navbar-wrapper">
@@ -11,8 +13,57 @@
                             <span class="navbar-toggler-bar bar3"></span>
                         </button>
                     </div>
-                    <a class="navbar-brand" href="/">Dashboard</a>
+                    <!-- <a class="navbar-brand" href="/">Dashboard</a> -->
+                    <div class="dropdown">
+                        <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Graph 
+                        </button>
+                        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton" id="myDropdown">
+                            <a class="dropdown-item" href="#">
+                              <img src="{{ASSETS_ROOT}}/img/guage.jpg">
+                              Gauge
+                            </a>
+                            <a class="dropdown-item" href="#">
+                                <img src="{{ ASSETS_ROOT }}/img/chart.png">
+                                Scatter
+                              </a>
+                            <a class="dropdown-item" href="#">
+                                <img src="{{ASSETS_ROOT}}/img/histogram.png">
+                                Histogram
+                              </a>
+                            <a class="dropdown-item" href="#">
+                                <img src="{{ASSETS_ROOT}}/img/heatmap.png">
+                                Heatmap
+                              </a>
+                            <a class="dropdown-item" href="#">
+                                <img src="{{ASSETS_ROOT}}/img/grapg.jpg">
+                                Graph
+                              </a>
+                            <a class="dropdown-item" href="#">
+                                <img src="{{ASSETS_ROOT}}/img/band.png">
+                                Band
+                              </a>
+                            
+                            
+                          
+                        </div>
+                    </div>
                 </div>
+                
+                <style>
+                      .dropdown-menu {
+                            background-color: #263148;
+                         }
+                      .dropdown-item img {
+                                width: 30px;
+                                height: 30px;
+                                margin-right: 20px;
+                            }
+                    
+                    
+                </style>
+               
+            
                 <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navigation"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-bar navbar-kebab"></span>
@@ -36,11 +87,73 @@
                                 </button>
                             </li>
                         </form>
-                      
-                                             
-                       
-                      
 
+                        <style>
+                            #reportrange span {
+                                color: rgb(255, 255, 255);      
+                            }
+                            .daterangepicker .ranges li {
+                                     color: black;
+                            }
+                        </style>
+
+                        <div id="reportrange" style="background: #263148; cursor: pointer; padding: 5px 10px; border: 1px solid #263148; width: 100%">
+                                <i class="fa fa-calendar"></i>&nbsp;
+                                <span></span> <i class="fa fa-caret-down"></i>
+                        </div>
+
+                        <div class="time-range-form">
+                            <form id="time-range-form" action="{% url 'time_upload_to_influx' %}" method="get">
+                                <input type="hidden" name="start_time" id="start_time" value="">
+                                <input type="hidden" name="end_time" id="end_time" value="">
+                            </form>
+                        </div>
+
+
+                        <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
+                        <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+                        <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+
+
+
+                        <script type="text/javascript">
+                        $(function() {
+
+                            var start = moment().subtract(29, 'days');
+                            var end = moment();
+
+                            function cb(start, end) {
+                                $('#reportrange span').html(start.format('MMMM D, YYYY') + ' - ' + end.format('MMMM D, YYYY'));
+                                    
+                                $('#reportrange').on('apply.daterangepicker', function (ev, picker) {
+
+                                    
+                                    $('#time-range-form').submit();
+                                });
+                                // Retrieve the value using getElementById
+                                document.getElementById('start_time').value = start;
+                                document.getElementById('end_time').value = end;
+                            }
+
+                            $('#reportrange').daterangepicker({
+                                startDate: start,
+                                endDate: end,
+                                ranges: {
+                                'Today': [moment(), moment()],
+                                'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                                'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+                                'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+                                'This Month': [moment().startOf('month'), moment().endOf('month')],
+                                'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+                                }
+                            }, cb);
+
+                            cb(start, end);
+
+
+                        });
+                        </script>
+        
                         
                         <div class="upload-btn-wrapper">
                             <form id="upload-form" method="POST" enctype="multipart/form-data" action="{% url 'upload_to_influxdb' %}">
@@ -51,6 +164,7 @@
                                 
                             </form>
                         </div>
+                        
                         <script>
                             document.getElementById('file-upload').addEventListener('change', function() {
                                 document.getElementById('upload-form').submit();

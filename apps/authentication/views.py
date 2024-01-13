@@ -5,8 +5,14 @@ Copyright (c) 2019 - present AppSeed.us
 
 # Create your views here.
 
+import csv
+from datetime import datetime
+from io import TextIOWrapper
+
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login
+import pandas as pd
 
 
 # from apps.authentication.models import Profile
@@ -18,7 +24,7 @@ from django.contrib.auth.models import User
 from .helper import send_forget_password_mail
 from django.views import View
 from .models import *
-
+from apps.authentication.models import TestOrderTable
 
 import uuid
 
@@ -36,6 +42,8 @@ def login_view(request):
             user = authenticate(username=username, password=password)
             if user is not None:
                 login(request, user)
+                request.session['username'] = (username)
+                request.session['is_logged_in'] = True
                 return redirect("/")
             else:
                 msg = 'Invalid credentials'
@@ -43,6 +51,17 @@ def login_view(request):
             msg = 'Error validating the form'
 
     return render(request, "accounts/login.html", {"form": form, "msg": msg})
+
+def my_view(request):
+    # Save data to the session
+    request.session['username'] = (username)
+    request.session['is_logged_in'] = True
+
+    # Access session data
+    username = request.session.get('username')
+    is_logged_in = request.session.get('is_logged_in')
+
+    return render(request, 'accounts/login.html', {'username': username, 'is_logged_in': is_logged_in})
 
 
 def register_user(request):
@@ -102,12 +121,12 @@ def ForgetPassword(request):
             
             send_email = send_forget_password_mail(user_obj.email, token)
             
-            # if send_email:
-            #     messages.success(request, 'An email is sent.')
-            # else:
-            #     messages.info(request, message='Something went wrong while sending the email.')
+            if send_email:
+                messages.success(request, 'An email is sent.')
+            else:
+                messages.info(request, message='Something went wrong while sending the email.')
             
-            # return redirect('/forget-password/')
+            return redirect('/forget-password/')
             
     except Exception as e:
         print(e)
@@ -173,6 +192,31 @@ def csv_upload_view(request):
         obj=File.objects.create(file=file)
         create_db(obj.file)
     return render (request,'home/index.html')
+
+# views.py
+
+def display_asin(request):
+    user_uploaded_csv = UploadedCSV.objects.filter(user=request.user)
+    asins = []
+
+    for uploaded_csv in user_uploaded_csv:
+        csv_file = uploaded_csv.csv_file
+
+        try:
+            decoded_file = TextIOWrapper(csv_file.open(), encoding='utf-8')
+            csv_reader = csv.DictReader(decoded_file)
+
+            for row in csv_reader:
+                asin = row.get('asin')  # Retrieve ASIN from the 'asin' column
+                if asin:
+                    asins.append(asin)
+
+            decoded_file.close()
+        except Exception as e:
+            return HttpResponse(f"Error reading CSV file: {e}")
+
+    return render(request, 'home/index.html', {'asins': asins})
+
             
         
 

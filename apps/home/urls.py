@@ -19,6 +19,7 @@ urlpatterns = [
     path("get_product_data",views.get_data_view,name="get_data_view"),
     path("search",views.search_products,name="search_products"),
     path("upload_csv",views.upload_to_influxdb,name="upload_to_influxdb"),
+    path("upload_time",views.time_upload_to_influx,name="time_upload_to_influx"),
     re_path(r'^.*\.*', views.pages, name='pages')
 
 ]

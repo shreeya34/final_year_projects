@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+     'bootstrap_datepicker_plus',
     'apps.authentication',
     'apps.home'  # Enable the inner home (home)
 ]
@@ -52,6 +53,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    
 ]
 
 ROOT_URLCONF = 'core.urls'
@@ -101,6 +103,7 @@ DATABASES = {
 		'PORT':'3306',
 	}
 }
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 
 INFLUXDB_SETTINGS = {
     'host': 'localhost',

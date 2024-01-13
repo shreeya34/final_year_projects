@@ -19,6 +19,7 @@ def get_product_info(self, product_id):
     
     influx_query = influx_client.query_client(query)
     return influx_query
+
     
     
 

@@ -6,6 +6,7 @@ Copyright (c) 2019 - present AppSeed.us
 from datetime import datetime, timedelta
 import http
 from http import client
+from io import TextIOWrapper
 import os
 import random
 from django.conf import settings
@@ -26,6 +27,7 @@ from .models import get_product_info
 from django.core.management.base import BaseCommand
 import datetime
 from django.contrib import messages
+
 BUCKET_NAME = settings.INFLUXDB_SETTINGS['bucket']
 ORG_NAME = settings.INFLUXDB_SETTINGS['org']
 
@@ -64,7 +66,7 @@ def pages(request):
         return HttpResponse(html_template.render(context, request))
 
 
-def get_influx_data(request):
+def get_influx_data(request): #old way to upload static files
     
     # check_health = influx_client.health()
     write_api = influx_client.write_api(write_options=SYNCHRONOUS)
@@ -96,30 +98,34 @@ def search_products(request):
 
     asin = request.GET.get('asin')
     product_name = request.GET.get('product_name')
-    
+    user_name = request.session.get('username')
     
     query_api = influx_client.query_api()
-    if asin:
+    if asin not in ['','null']:
         query = 'from(bucket: "new_amazon")\
             |> range(start: 2013-12-13T08:49:26.897825+00:00, stop: 2023-12-30T08:49:26.897825+00:00)\
             |> filter(fn: (r) => r["_measurement"] == "ecommerce_products")\
             |> filter(fn: (r) => r["_field"] == "actual_price")\
             |> filter(fn: (r) => r["asin"] == "{}")\
-            |> yield(name: "mean")'.format(asin)
-            
+            |> filter(fn: (r) => r["user"] == "{}")\
+            |> yield(name: "mean")'.format(asin,user_name)
     elif product_name:
         query = 'from(bucket: "new_amazon")\
-             |> range(start: 2013-12-13T08:49:26.897825+00:00, stop: 2023-12-30T08:49:26.897825+00:00)\
+            |> range(start: 2013-12-13T08:49:26.897825+00:00, stop: 2023-12-30T08:49:26.897825+00:00)\
             |> filter(fn: (r) => r["_measurement"] == "ecommerce_products")\
             |> filter(fn: (r) => r["_field"] == "actual_price")\
-            |> filter(fn: (r) => r["asin"] == "{}")\
             |> filter(fn: (r) => r["product_name"] == "{}")\
-            |> yield(name: "mean")'.format(product_name)
-            
-            
-
+            |> filter(fn: (r) => r["user"] == "{}")\
+            |> yield(name: "mean")'.format(product_name,user_name)
     else:
-        return JsonResponse({'error': 'No search parameter provided'}, status=400)     
+        query = 'from(bucket: "new_amazon")\
+            |> range(start: 2021-12-13T08:49:26.897825+00:00, stop: 2023-12-30T08:49:26.897825+00:00)\
+            |> filter(fn: (r) => r["_measurement"] == "ecommerce_products")\
+            |> filter(fn: (r) => r["_field"] == "actual_price")\
+            |> filter(fn: (r) => r["user"] == "{}")\
+            |> yield(name: "mean")'.format(user_name)
+    # else:
+    #     return JsonResponse({'error': 'No search parameter provided'}, status=400)     
 
     result = query_api.query(query=query,org='93eb79fe52548977')
     json_data = []
@@ -189,12 +195,12 @@ def upload_to_influxdb(request):
                 if '_measurement' not in row:
                     messages.warning(request, "Unsupported file: No measurement found.")
                     return redirect('/')
-               
                   
                 # Create a Point for each row in the CSV
                 point = influxdb_client.Point(row['_measurement']) \
                     .tag("asin", row['asin']) \
                     .tag("product_name", row['product_name']) \
+                    .tag("user",request.session.get('username')) \
                     .field(row['_field'], float(row['_value'])) \
                     .time(row['_time'], influxdb_client.WritePrecision.NS)
                 try:
@@ -207,9 +213,72 @@ def upload_to_influxdb(request):
             
 # return JsonResponse({'success':True, 'message':"Your File is Successfully Uploaded!"})
     return render('/templates/includes/navigation.html') 
-       
 
 
+
+from datetime import datetime
+
+
+def time_upload_to_influx(request):
+    if request.method == 'GET':
+        start_time = request.GET.get('start_time')  # Get start time from form
+        end_time = request.GET.get('end_time')  # Get end time from form
+
+        if not (start_time and end_time):
+            messages.warning(request, "Please provide both start and end times.")
+            return redirect('/')
+   
+    try:
+        # Convert received strings to datetime objects
+        start_date_object = datetime.strptime(start_time, '%a %b %d %Y %H:%M:%S GMT%z')
+        end_date_object = datetime.strptime(end_time, '%a %b %d %Y %H:%M:%S GMT%z')
+        formatted_start_date = start_date_object.strftime('%Y-%m-%dT%H:%M:%SZ')
+        formatted_end_date = end_date_object.strftime('%Y-%m-%dT%H:%M:%SZ')
+        
+        query_api = influx_client.query_api()
+        # Your InfluxDB query logic within the specified time range
+        query = f'from(bucket: "new_amazon")\
+                 |> range(start: {formatted_start_date}, stop: {formatted_end_date})\
+                 |> filter(fn: (r) => r["_measurement"] == "ecommerce_products")\
+                 |> filter(fn: (r) => r["_field"] == "actual_price")\
+                 |> filter(fn: (r) => r["asin"] == "{{}}")\
+                 |> yield(name: "mean")'
+
+        # Execute the InfluxDB query
+        result =  query_api.query(query=query,org='93eb79fe52548977')
+        print(result)
+        messages.success(request, "InfluxDB query executed successfully within the specified time range.")
+    except Exception as e:
+        messages.error(request, f"Error in executing InfluxDB query: {e}")
+
+    return redirect('/')
+
+def get_asin(request):
+    asin = request.GET.get('asin')
+    user_name = request.session.get('username')
+    
+    query_api = influx_client.query_api()
+    if asin not in ['','null']:
+        query = 'from(bucket: "new_amazon")\
+            |> range(start: 2013-12-13T08:49:26.897825+00:00, stop: 2023-12-30T08:49:26.897825+00:00)\
+            |> filter(fn: (r) => r["_measurement"] == "ecommerce_products")\
+            |> filter(fn: (r) => r["_field"] == "actual_price")\
+            |> filter(fn: (r) => r["asin"] == "{}")\
+            |> filter(fn: (r) => r["user"] == "{}")\
+            |> yield(name: "mean")'.format(asin,user_name)
+            
+    result = query_api.query(query=query,org='93eb79fe52548977')
+    json_data = []
+    for table in result:
+        for record in table.records:
+            record_dict = record.values
+            json_data.append(record_dict)
+    
+    print("Result: {0}".format(json_data))
+    return JsonResponse(data=json_data,safe=False)
+    
+        
+    
 class Command(BaseCommand):
     help = 'Convert quoted string values to numerical data types'
 
