@@ -25,46 +25,90 @@
                 {% endfor %}
                 
 
-                <div class="card card-chart">
-                    <div class="card-header ">
-                        <h5 class="card-category">Sales</h5>
-                        <h3 class="card-title"><i class="tim-icons icon-bell-55 text-primary"></i> 763,215</h3>
-                    </div>  
-                    <div class="card-body">
-                        <div class="chart-area">
-                            <canvas id="ProductSalesChart"></canvas>
+                    <div class="card card-chart">
+                        <div class="card-header ">
+                            <h5 class="card-category">Sales</h5>
+                            <h3 class="card-title"><i class="tim-icons icon-bell-55 text-primary"></i> 763,215</h3>
+                        </div>  
+                        <div class="card-body">
+                            <div class="chart-area">
+                                <canvas id="ProductSalesChart"></canvas>
+                            </div>
+                        </div>    
                         </div>
-                    </div>    
                     </div>
-                </div>
-                <style>
-                    .custom-card {
-                        width: 600px;
-                        height: 400px;
-                    }
-                    </style>
+                    <style>
+                        .custom-card {
+                            width: 200px;
+                            height: 480px;
+                        }
+                    
+                        </style>
                     <div class="col-lg-6 order-lg-last">
                         <div class="card custom-card">
                             <div class="card-header">
-                                <h4 class="card-title">From</h4>
+                                <h4 class="card-title">ASIN_ID</h4>
                             </div>
-                            <div class="card-body"> 
-                                <!-- Your content goes here -->
-                                This is a simple card without a table. Click to toggle another content box.
+                            <div class="card-body" id="asinContentBox"> 
+                                <!-- ASIN content will be displayed here -->
                             </div>
                         </div>
                     </div>
+                    
+                    <script>
+                       function fetchAnnualSalesData(asin) {
+                        const asinData = fetch(`/getAsinData?asin=${asin}`)
+                            .then(response => response.json())
+                            .then(asinData => {
+                                console.log(asinData);
+
+                                let asinContentBox = document.getElementById("asinContentBox");
+
+                                // Extracting unique ASINs from jsonData using Set
+                                let uniqueAsinSet = new Set();
+                                let asinHtml = "<ul>";
+
+                                for (let i = 0; i < asinData.length; i++) {
+                                    const currentAsin = asinData[i].asin;
+
+                                    // Check if the ASIN is not in the set, then add it to the HTML
+                                    if (!uniqueAsinSet.has(currentAsin)) {
+                                        asinHtml += `<li><input type="checkbox" id="asinCheckbox${i}" name="asinCheckbox" value="${currentAsin}"><label for="asinCheckbox${i}">${currentAsin}</label></li>`;
+
+                                        // Add the ASIN to the set to mark it as added
+                                        uniqueAsinSet.add(currentAsin);
+                                    }
+                                }
+
+                                asinHtml += "</ul>";
+
+                                // Set the content of the asinContentBox
+                                asinContentBox.innerHTML = asinHtml;
+                            })
+                            .catch(error => {
+                                console.error('Error fetching or processing data:', error);
+                            });
+                    }
+
+                    // Example usage
+                    fetchAnnualSalesData('your_asin_parameter');
+
+
+
+                    </script>
                 
-                    <div class="col-lg-6 col-md-12" id="additionalContentBox" >
+                    <div class="col-lg-6 col-md-12" id="additionalContentBox" style="height: 400px !important; width: 900px;">
+
                         <!-- Additional content box -->
                         <div class="card">
                             <div class="card-header">
-                                <h4 class="card-title">Additional Content Box</h4>
+                                <h4 class="card-title">Monthly Data</h4>
                             </div>
                             <div class="card-body">
                                 <!-- Additional content goes here -->
                                 <div class="chart-area">
-                                    <canvas id="AnnualSalesChart"></canvas>
+                                    <!-- <canvas id="AnnualSalesChart"></canvas> -->
+                                    <canvas id="AnnualSalesChart" width="753" height="400" style="display: block;width: 750px;height: 400px;" class="chartjs-render-monitor"></canvas>
                                 </div>
                             </div>
                         </div>
@@ -91,7 +135,7 @@
   
     async function fetchAnnualSalesData(asin){
         try {
-            const annualSalesChart = await fetch(`/getAnnualData?asin=${asin}`);
+            const annualSalesChart = await fetch(`/search?asin=${asin}`);
             const annualData = await annualSalesChart.json();
             console.log(annualData);
             
@@ -179,7 +223,7 @@
             };
             new Chart(ctx, config);
 
-        } catch (error) {
+        }catch (error) {
             console.error('Error fetching or processing data:', error);
         }
 

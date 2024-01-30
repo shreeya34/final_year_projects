@@ -138,7 +138,34 @@ def search_products(request):
     return JsonResponse(data=json_data,safe=False)
 
     # return HttpResponse(f"You're viewing product: {asin}")
+    
+def get_annual_data(request):
+    asin = request.GET.get('asin')
+    query_api = influx_client.query_api()
+    if asin not in ['','null']:
+        query = 'from(bucket: "new_amazon")\
+            |> range(start: 2013-12-13T08:49:26.897825+00:00, stop: 2023-12-30T08:49:26.897825+00:00)\
+            |> filter(fn: (r) => r["_measurement"] == "ecommerce_products")\
+            |> filter(fn: (r) => r["_field"] == "actual_price")\
+            |> filter(fn: (r) => r["asin"] == "{}")\
+            |> filter(fn: (r) => r["user"] == "{}")\
+            |> yield(name: "mean")'.format(asin)
+    result = query_api.query(query=query,org='93eb79fe52548977')
+    json_data = []
+    for table in result:
+            for record in table.records:
+                timestamp = record.get_time()
+                month_name = extract_month_name(timestamp)
+                record_dict = {'month_name': month_name, **record.values}
+                json_data.append(record_dict)
 
+    print("Result: {0}".format(json_data))
+    return JsonResponse(data=json_data, safe=False)
+
+def extract_month_name(timestamp):
+    dt_object = datetime.utcfromtimestamp(timestamp)
+    month_name = dt_object.strftime('%B')
+    return month_name
 
 def get_data_view(request):
    asin = request.GET.get('asin')
@@ -260,12 +287,10 @@ def get_asin(request):
     query_api = influx_client.query_api()
     if asin not in ['','null']:
         query = 'from(bucket: "new_amazon")\
-            |> range(start: 2013-12-13T08:49:26.897825+00:00, stop: 2023-12-30T08:49:26.897825+00:00)\
+            |> range(start: 2017-12-13T08:49:26.897825+00:00, stop: 2023-12-30T08:49:26.897825+00:00)\
             |> filter(fn: (r) => r["_measurement"] == "ecommerce_products")\
-            |> filter(fn: (r) => r["_field"] == "actual_price")\
-            |> filter(fn: (r) => r["asin"] == "{}")\
             |> filter(fn: (r) => r["user"] == "{}")\
-            |> yield(name: "mean")'.format(asin,user_name)
+            |> yield(name: "mean")'.format(user_name)
             
     result = query_api.query(query=query,org='93eb79fe52548977')
     json_data = []

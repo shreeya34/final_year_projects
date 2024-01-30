@@ -11,6 +11,10 @@ Base styles
   background-color: $card-bg;
   background-clip: border-box;
   border: $card-border-width solid $card-border-color;
+  width: 600px;
+  height: 400px;
+
+
   @include border-radius($card-border-radius);
 
   > hr {
