@@ -22,6 +22,7 @@ urlpatterns = [
     path("upload_time",views.time_upload_to_influx,name="time_upload_to_influx"),
     path("/getAnnualData",views.get_annual_data,name="get_annual_data"),
     path("getAsinData",views.get_asin,name="get_asin"),
+    path("stats_data",views.submitData,name="submitData"),
     re_path(r'^.*\.*', views.pages, name='pages')
 
 ]

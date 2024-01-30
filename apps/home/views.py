@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 import http
 from http import client
 from io import TextIOWrapper
+import json
 import os
 import random
 from django.conf import settings
@@ -241,6 +242,48 @@ def upload_to_influxdb(request):
 # return JsonResponse({'success':True, 'message':"Your File is Successfully Uploaded!"})
     return render('/templates/includes/navigation.html') 
 
+def submitData(request):
+    if request.method == 'POST':
+        try:
+            # Retrieve necessary data from the form data
+            decoded_body = request.body.decode('utf-8')
+            if 'application/json' in request.content_type:
+                json_data = json.loads(decoded_body)
+                asin_values = json_data.get('asin')
+                user_name = request.session.get('username')
+                aggregator = json_data.get('stats')
+                asin_condition = ' or '.join([f'r["asin"] == "{asin}"' for asin in asin_values])
+
+                # Your InfluxDB query
+                query_api = influx_client.query_api()
+                query = f'from(bucket: "new_amazon")\
+                    |> range(start: 2017-12-13T08:49:26.897825+00:00, stop: 2023-12-30T08:49:26.897825+00:00)\
+                    |> filter(fn: (r) => r["_measurement"] == "ecommerce_products")\
+                    |> filter(fn: (r) => r["user"] == "{user_name}")\
+                    |> filter(fn: (r) => {asin_condition})\
+                    |> yield(name: "{aggregator}")'
+
+                # Process the query here and execute it in InfluxDB
+                result =  query_api.query(query=query,org='93eb79fe52548977')
+                print(result)
+                # Replace the following response with your actual response
+                response = []
+                for table in result:
+                    for record in table.records:
+                        record_dict = record.values
+                        response.append(record_dict)
+    
+                print("Result: {0}".format(response))
+                return JsonResponse(data=response,safe=False)
+    
+        except Exception as e:
+            messages.error(request, f"Error in executing data: {e}")
+            
+    return redirect('/')
+
+    
+    
+
 
 
 from datetime import datetime
@@ -282,6 +325,7 @@ def time_upload_to_influx(request):
 
 def get_asin(request):
     asin = request.GET.get('asin')
+    product_name = request.GET.get('product_name')
     user_name = request.session.get('username')
     
     query_api = influx_client.query_api()

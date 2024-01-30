@@ -1,6 +1,6 @@
 {% extends "layouts/base.html" %}
 
-{% block title %} Dashboard {% endblock %} 
+{% block title %} Dashboard {% endblock %}
 
 <!-- Specific Page CSS goes HERE  -->
 {% block stylesheets %}{% endblock stylesheets %}
@@ -9,122 +9,262 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-    <div class="content">
-        <div class="row">
-            <div class="col-12">
-                 
-                {% for msg in messages %}
-                    <div class="alert alert-warning alert-dismissible fade show" role="alert">
-                    
-                        <strong>Hey!</strong>{{msg}}
-                        <!-- <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button> -->
-                    </div> 
-                  
+<div class="content">
+    <div class="row">
+        <div class="col-12">
 
-                      
-                {% endfor %}
-                
+            {% for msg in messages %}
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
 
-                    <div class="card card-chart">
-                        <div class="card-header ">
-                            <h5 class="card-category">Sales</h5>
-                            <h3 class="card-title"><i class="tim-icons icon-bell-55 text-primary"></i> 763,215</h3>
-                        </div>  
-                        <div class="card-body">
-                            <div class="chart-area">
-                                <canvas id="ProductSalesChart"></canvas>
-                            </div>
-                        </div>    
-                        </div>
-                    </div>
-                    <style>
-                        .custom-card {
-                            width: 200px;
-                            height: 480px;
-                        }
-                    
-                        </style>
-                    <div class="col-lg-6 order-lg-last">
-                        <div class="card custom-card">
-                            <div class="card-header">
-                                <h4 class="card-title">ASIN_ID</h4>
-                            </div>
-                            <div class="card-body" id="asinContentBox"> 
-                                <!-- ASIN content will be displayed here -->
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <script>
-                       function fetchAnnualSalesData(asin) {
-                        const asinData = fetch(`/getAsinData?asin=${asin}`)
-                            .then(response => response.json())
-                            .then(asinData => {
-                                console.log(asinData);
-
-                                let asinContentBox = document.getElementById("asinContentBox");
-
-                                // Extracting unique ASINs from jsonData using Set
-                                let uniqueAsinSet = new Set();
-                                let asinHtml = "<ul>";
-
-                                for (let i = 0; i < asinData.length; i++) {
-                                    const currentAsin = asinData[i].asin;
-
-                                    // Check if the ASIN is not in the set, then add it to the HTML
-                                    if (!uniqueAsinSet.has(currentAsin)) {
-                                        asinHtml += `<li><input type="checkbox" id="asinCheckbox${i}" name="asinCheckbox" value="${currentAsin}"><label for="asinCheckbox${i}">${currentAsin}</label></li>`;
-
-                                        // Add the ASIN to the set to mark it as added
-                                        uniqueAsinSet.add(currentAsin);
-                                    }
-                                }
-
-                                asinHtml += "</ul>";
-
-                                // Set the content of the asinContentBox
-                                asinContentBox.innerHTML = asinHtml;
-                            })
-                            .catch(error => {
-                                console.error('Error fetching or processing data:', error);
-                            });
-                    }
-
-                    // Example usage
-                    fetchAnnualSalesData('your_asin_parameter');
+                <strong>Hey!</strong>{{msg}}
+                <!-- <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button> -->
+            </div>
 
 
 
-                    </script>
-                
-                    <div class="col-lg-6 col-md-12" id="additionalContentBox" style="height: 400px !important; width: 900px;">
+            {% endfor %}
 
-                        <!-- Additional content box -->
-                        <div class="card">
-                            <div class="card-header">
-                                <h4 class="card-title">Monthly Data</h4>
-                            </div>
-                            <div class="card-body">
-                                <!-- Additional content goes here -->
-                                <div class="chart-area">
-                                    <!-- <canvas id="AnnualSalesChart"></canvas> -->
-                                    <canvas id="AnnualSalesChart" width="753" height="400" style="display: block;width: 750px;height: 400px;" class="chartjs-render-monitor"></canvas>
-                                </div>
-                            </div>
-                        </div>
+
+            <div class="card card-chart" style="height: 400px;">
+                <div class="card-header ">
+                    <h5 class="card-category">Sales</h5>
+                    <h3 class="card-title"><i class="tim-icons icon-bell-55 text-primary"></i> 763,215</h3>
+                </div>
+                <div class="card-body">
+                    <div class="chart-area">
+                        <canvas id="ProductSalesChart"></canvas>
                     </div>
                 </div>
-            </div> 
-                               
-                    
             </div>
         </div>
-        
+        <div class="col-lg-6 col-md-12" id="additionalContentBox" style="height: 400px !important; width: 900px;">
+
+            <!-- Additional content box -->
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title">Monthly Data</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Additional content goes here -->
+                    <div class="chart-area">
+                        <!-- <canvas id="AnnualSalesChart"></canvas> -->
+                        <canvas id="AnnualSalesChart" width="753" height="400"
+                            style="display: block;width: 750px;height: 400px;" class="chartjs-render-monitor"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <style>
+            .custom-card {
+                width: 380px;
+                height: 480px;
+
+            }
+
+            .asin-checkbox-list {
+
+                padding: 0;
+            }
+
+            .asin-checkbox-item {
+                font-size: 15px;
+                font-weight: bold;
+                margin-bottom: 10px;
+                /* Optional: Add some spacing between items */
+                list-style-type: none;
+
+            }
+
+            .asin-checkbox-item input {
+                margin-right: 10px;
+            }
+        </style>
+
+
+
+        <div class="row">
+            <!-- ASIN_ID box on the left -->
+            <div class="col-lg-6">
+                <div class="card custom-card">
+                    <div class="card-header">
+                        <h4 class="card-title">ASIN_ID</h4>
+                    </div>
+                    <div class="card-body" id="asinContentBox">
+                        <!-- Content for the ASIN_ID box -->
+                    </div>
+                </div>
+            </div>
+
+            <style>
+                .aggregate-radio-item {
+                    margin-bottom: 10px;
+
+                }
+
+                .aggregate-radio-item input {
+                    margin-right: 10px;
+
+                }
+            </style>
+
+            <!-- New box on the right -->
+            <div class="col-lg-6 mb-4">
+                <div class="card custom-card">
+                    <div class="card-header">
+                        <h4 class="card-title">Aggregate Function</h4>
+                    </div>
+                    <div class="card-body" id="rightBoxContent">
+                        <!-- Checkboxes for statistical options -->
+                        <!-- <div> -->
+                        <div class="aggregate-radio-item">
+                            <input type="radio" id="meanCheckbox" name="selectedStatistic" value="mean">
+                            <label for="meanCheckbox" class="form-check-label font-weight-bold">Mean</label>
+                        </div>
+                        <div class="aggregate-radio-item">
+                            <input type="radio" id="medianCheckbox" name="selectedStatistic" value="median">
+                            <label for="medianCheckbox" class="form-check-label font-weight-bold">Median</label>
+                        </div>
+                        <div class="aggregate-radio-item">
+                            <input type="radio" id="maxCheckbox" name="selectedStatistic" value="max">
+                            <label for="maxCheckbox" class="form-check-label font-weight-bold">Max</label>
+                        </div>
+                        <div class="aggregate-radio-item">
+                            <input type="radio" id="minCheckbox" name="selectedStatistic" value="min">
+                            <label for="minCheckbox" class="form-check-label font-weight-bold">Min</label>
+                        </div>
+                        <div class="aggregate-radio-item">
+                            <input type="radio" id="increaseCheckbox" name="selectedStatistic" value="increase">
+                            <label for="increaseCheckbox" class="form-check-label font-weight-bold">Increase</label>
+                        </div>
+                        <div class="aggregate-radio-item">
+                            <input type="radio" id="firstCheckbox" name="selectedStatistic" value="first">
+                            <label for="firstCheckbox" class="form-check-label font-weight-bold">First</label>
+                        </div>
+                        <div class="aggregate-radio-item">
+                            <input type="radio" id="lastCheckbox" name="selectedStatistic" value="last">
+                            <label for="lastCheckbox" class="form-check-label font-weight-bold">last</label>
+                        </div>
+                        <div class="aggregate-radio-item">
+                            <input type="radio" id="uniqueCheckbox" name="selectedStatistic" value="unique">
+                            <label for="uniqueCheckbox" class="form-check-label font-weight-bold">Unique</label>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+            <button type="button" id="submitButton" class="btn btn-primary"
+                style="position: absolute; bottom: 35px; right: 0;">Submit</button>
+            <script>
+                function getCookie(name) {
+                    const cookieValue = document.cookie
+                        .split('; ')
+                        .find(row => row.startsWith(name + '='))
+                        .split('=')[1];
+
+                    return cookieValue ? decodeURIComponent(cookieValue) : null;
+                }
+                document.addEventListener('DOMContentLoaded', () => {
+                    const submitButton = document.getElementById('submitButton');
+
+                    submitButton.addEventListener('click', async () => {
+                        // Get selected ASIN and aggregate function values
+                        const selectedAsin = document.querySelectorAll('input[id^="asinCheckbox"]:checked');
+                        const selectedAsinValues = Array.from(selectedAsin).map(checkbox => checkbox.value);
+                        const selectedStatistic = document.querySelector('input[name="selectedStatistic"]:checked').value;
+
+                        console.log(selectedAsinValues);
+                        console.log(selectedStatistic);
+                        const csrftoken = getCookie('csrftoken');
+
+                        // Make sure both ASIN and aggregate function are selected
+                        if (selectedAsinValues && selectedStatistic) {
+                            // Create a FormData object to send data to the server
+                            const requestData = JSON.stringify({ 'asin': selectedAsinValues, 'stats': selectedStatistic })
+                            try {
+                                const stats_response = await fetch('/stats_data', {
+                                    method: 'POST',
+                                    body: requestData,
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'X-CSRFToken': csrftoken,
+
+                                    },
+                                });
+
+                                const data = await stats_response.json();
+                                console.log(data);
+                                commonChart(data);
+                            } catch (error) {
+                                console.log(error);
+                                // console.error('Error:', error);
+                            }
+                        } else {
+                            alert('Please select both ASIN and Aggregate Function before submitting.');
+                        }
+                    });
+                });
+            </script>
+
+
+
+            <script>
+                function fetchAnnualSalesData(asin) {
+                    const asinData = fetch(`/getAsinData?asin=${asin}`)
+                        .then(response => response.json())
+                        .then(asinData => {
+                            console.log(asinData);
+
+                            let asinContentBox = document.getElementById("asinContentBox");
+
+                            // Extracting unique ASINs from jsonData using Set
+                            let uniqueAsinSet = new Set();
+                            let asinHtml = "<ul>";
+
+                            for (let i = 0; i < asinData.length; i++) {
+                                const currentAsin = asinData[i].asin;
+                                const productName = asinData[i].product_name;
+
+                                // Check if the ASIN is not in the set, then add it to the HTML
+                                if (!uniqueAsinSet.has(currentAsin)) {
+                                    asinHtml += `<li class="asin-checkbox-item"><input type="checkbox" id="asinCheckbox${i}" name="selectedAsin" value="${currentAsin}"><label for="selectedAsin${i}">${productName} (${currentAsin})</label></li>`;
+
+                                    // Add the ASIN to the set to mark it as added
+                                    uniqueAsinSet.add(currentAsin);
+                                }
+                            }
+
+                            asinHtml += "</ul>";
+
+                            // Set the content of the asinContentBox
+                            asinContentBox.innerHTML = asinHtml;
+                        })
+                        .catch(error => {
+                            console.error('Error fetching or processing data:', error);
+                        });
+                }
+
+                // Example usage
+                fetchAnnualSalesData('asin_parameter');
+
+
+
+            </script>
+
+        </div>
     </div>
+</div>
 
 
-    
-        
+</div>
+</div>
+
+</div>
+
+
+
+
 {% endblock content %}
 
 <!-- Specific Page JS goes HERE  -->
@@ -132,71 +272,220 @@
 
 <script>
 
-  
-    async function fetchAnnualSalesData(asin){
+    function getRandomColor() {
+        const random255 = () => Math.floor(Math.random() * 256);
+        const r = random255();
+        const g = random255();
+        const b = random255();
+
+        return `rgb(${r},${g},${b})`;
+    }
+
+    function commonChart(data) {
+        console.log("Common Chart");
+        console.log(data);
+        try {
+            let chartLabels = [];
+            let chartData = [];
+
+            const groupedByASIN = data.reduce((result, item) => {
+                const { product_name, asin, _value,_time } = item;
+                chartLabels.push(_time);
+                // Check if ASIN key exists in the result object
+                if (!result[asin]) {
+                    result[asin] = [];
+                }
+
+                // Push data for the respective ASIN
+                result[asin].push({ _time, product_name, _value });
+
+                return result;
+            }, {});
+            // Convert the grouped data to an array
+            const asinArray = Object.entries(groupedByASIN).map(([asin, values]) => ({
+                asin,
+                values,
+            }));
+
+            const datasets = asinArray.map(({ asin, values }) => {
+                // Customize this part based on your requirements
+                const dynamicBorderColor = getRandomColor();
+
+                const dataset = {
+                    label: `ASIN ${asin}`,
+                    borderColor: dynamicBorderColor,
+                    // backgroundColor: {
+                    //     fill: '#FFC0CB'
+                    // },// Customize the color as needed
+                    data: values.map(({ _time, product_name, _value }) => (_value)),
+                };
+
+                return dataset;
+            });
+
+            console.log(datasets);
+
+
+            // Extracting time and value data from jsonData
+            // for (let i = 0; i < data.length; i++) {
+            //     c_data = {
+            //         label: data[i].name,
+            //         data: chartData,
+            //         borderWidth: 1,
+            //         borderColor: `rgba(22${i}, 78, 202, 0.8)`,
+            //         backgroundColor: {
+            //             fill: '#FFC0CB'
+            //         },
+            //     }
+            //     chartLabels.push(data[i]._time); // Extracting _time property
+            //     chartData.push(data[i]._value); // Extracting _value property
+
+            // }
+            // console.log(chartData)
+            // console.log(chartLabels)
+
+            const gradientChartOptionsConfigurationWithTooltipPurple = {
+                maintainAspectRatio: false,
+                legend: {
+                    display: false
+                },
+                tooltips: {
+                    backgroundColor: '#f5f5f5',
+                    titleFontColor: '#333',
+                    bodyFontColor: '#666',
+                    bodySpacing: 4,
+                    xPadding: 12,
+                    mode: "nearest",
+                    intersect: 0,
+                    position: "nearest"
+                },
+                responsive: true,
+                scales: {
+                    yAxes: [{
+                        barPercentage: 1.6,
+                        gridLines: {
+                            drawBorder: false,
+                            color: 'rgba(29,140,248,0.0)',
+                            zeroLineColor: "transparent",
+                        },
+                        ticks: {
+                            suggestedMin: 60,
+                            suggestedMax: 125,
+                            padding: 20,
+                            fontColor: "#9a9a9a"
+                        }
+                    }],
+
+                    xAxes: [{
+                        barPercentage: 1.6,
+                        gridLines: {
+                            drawBorder: false,
+                            color: 'rgba(225,78,202,0.1)',
+                            zeroLineColor: "transparent",
+                        },
+                        ticks: {
+                            padding: 20,
+                            fontColor: "#9a9a9a"
+                        }
+                    }]
+                }
+
+            };
+
+
+
+            let ctx = document.getElementById("ProductSalesChart").getContext('2d');
+
+            if (window.productSalesChart) {
+                // Destroy the existing chart instance
+                window.productSalesChart.destroy();
+            }
+
+            var gradientStroke = ctx.createLinearGradient(0, 230, 0, 50);
+
+            gradientStroke.addColorStop(1, 'rgba(72,72,176,0.1)');
+            gradientStroke.addColorStop(0.4, 'rgba(72,72,176,0.0)');
+            gradientStroke.addColorStop(0, 'rgba(119,52,169,0)'); //purple colors
+            var config = {
+                type: 'line',
+                data: {
+                    labels: chartLabels,
+                    datasets: datasets
+                },
+                options: gradientChartOptionsConfigurationWithTooltipPurple
+            };
+            window.productSalesChart = new Chart(ctx, config);
+
+        } catch (error) {
+            console.error('Error fetching or processing data:', error);
+        }
+    }
+
+
+    async function fetchDataAndCreateChart(asin) {
         try {
             const annualSalesChart = await fetch(`/search?asin=${asin}`);
             const annualData = await annualSalesChart.json();
             console.log(annualData);
-            
+
             let chartLabels = [];
             let chartData = [];
 
-        // Extracting time and value data from jsonData
+            // Extracting time and value data from jsonData
             for (let i = 0; i < annualData.length; i++) {
-            chartLabels.push(annualData[i]._time); // Extracting _time property
-            chartData.push(annualData[i]._value); // Extracting _value property
-            
-        }
-        console.log(chartData)
-        console.log(chartLabels)
+                chartLabels.push(annualData[i]._time); // Extracting _time property
+                chartData.push(annualData[i]._value); // Extracting _value property
+
+            }
+            console.log(chartData)
+            console.log(chartLabels)
 
             const gradientChartOptionsConfigurationWithTooltipPurple = {
-            maintainAspectRatio: false,
-            legend: {
-                display: false
-            },
-            tooltips: {
-                backgroundColor: '#f5f5f5',
-                titleFontColor: '#333',
-                bodyFontColor: '#666',
-                bodySpacing: 4,
-                xPadding: 12,
-                mode: "nearest",
-                intersect: 0,
-                position: "nearest"
-            },
-            responsive: true,
-            scales: {
-                yAxes: [{
-                barPercentage: 1.6,
-                gridLines: {
-                    drawBorder: false,
-                    color: 'rgba(29,140,248,0.0)',
-                    zeroLineColor: "transparent",
+                maintainAspectRatio: false,
+                legend: {
+                    display: false
                 },
-                ticks: {
-                    suggestedMin: 60,
-                    suggestedMax: 125,
-                    padding: 20,
-                    fontColor: "#9a9a9a"
-                }
-                }],
+                tooltips: {
+                    backgroundColor: '#f5f5f5',
+                    titleFontColor: '#333',
+                    bodyFontColor: '#666',
+                    bodySpacing: 4,
+                    xPadding: 12,
+                    mode: "nearest",
+                    intersect: 0,
+                    position: "nearest"
+                },
+                responsive: true,
+                scales: {
+                    yAxes: [{
+                        barPercentage: 1.6,
+                        gridLines: {
+                            drawBorder: false,
+                            color: 'rgba(29,140,248,0.0)',
+                            zeroLineColor: "transparent",
+                        },
+                        ticks: {
+                            suggestedMin: 60,
+                            suggestedMax: 125,
+                            padding: 20,
+                            fontColor: "#9a9a9a"
+                        }
+                    }],
 
-                xAxes: [{
-                barPercentage: 1.6,
-                gridLines: {
-                    drawBorder: false,
-                    color: 'rgba(225,78,202,0.1)',
-                    zeroLineColor: "transparent",
-                },
-                ticks: {
-                    padding: 20,
-                    fontColor: "#9a9a9a"
+                    xAxes: [{
+                        barPercentage: 1.6,
+                        gridLines: {
+                            drawBorder: false,
+                            color: 'rgba(225,78,202,0.1)',
+                            zeroLineColor: "transparent",
+                        },
+                        ticks: {
+                            padding: 20,
+                            fontColor: "#9a9a9a"
+                        }
+                    }]
                 }
-                }]
-            }
-            
+
             };
 
             let ctx = document.getElementById("AnnualSalesChart").getContext('2d');
@@ -207,23 +496,22 @@
             gradientStroke.addColorStop(0.4, 'rgba(72,72,176,0.0)');
             gradientStroke.addColorStop(0, 'rgba(119,52,169,0)'); //purple colors
             var config = {
-            type: 'bar',
-            data: {
-            labels: chartLabels,
-            datasets: [{
-                    label: '# of Votes',
-                    data: chartData,
-                    borderWidth: 1,
-                    backgroundColor: {
-                        fill: '#FFC0CB'
-},
-            }]
+                type: 'bar',
+                data: {
+                    labels: chartLabels,
+                    datasets: [{
+                        label: '# of Votes',
+                        data: chartData,
+                        borderWidth: 1,
+                        backgroundColor: 'rgba(225, 78, 202, 0.8)', // Red color with 80% opacity
+                        hoverBackgroundColor: 'rgba(225, 78, 202, 1)', // Color on hover
+                    }]
                 },
-            options: gradientChartOptionsConfigurationWithTooltipPurple
+                options: gradientChartOptionsConfigurationWithTooltipPurple
             };
             new Chart(ctx, config);
 
-        }catch (error) {
+        } catch (error) {
             console.error('Error fetching or processing data:', error);
         }
 
@@ -231,99 +519,15 @@
     }
 
 
-    async function fetchDataAndCreateChart(asin) {
+    async function fetchAnnualSalesData(asin) {
         try {
             const overallProductChart = await fetch(`/search?asin=${asin}`); // Replace with your API endpoint
             const jsonData = await overallProductChart.json();
-            console.log(jsonData);
-            let chartLabels = [];
-            let chartData = [];
-
-        // Extracting time and value data from jsonData
-            for (let i = 0; i < jsonData.length; i++) {
-            chartLabels.push(jsonData[i]._time); // Extracting _time property
-            chartData.push(jsonData[i]._value); // Extracting _value property
-            
-        }
-        console.log(chartData)
-        console.log(chartLabels)
-
-            const gradientChartOptionsConfigurationWithTooltipPurple = {
-            maintainAspectRatio: false,
-            legend: {
-                display: false
-            },
-            tooltips: {
-                backgroundColor: '#f5f5f5',
-                titleFontColor: '#333',
-                bodyFontColor: '#666',
-                bodySpacing: 4,
-                xPadding: 12,
-                mode: "nearest",
-                intersect: 0,
-                position: "nearest"
-            },
-            responsive: true,
-            scales: {
-                yAxes: [{
-                barPercentage: 1.6,
-                gridLines: {
-                    drawBorder: false,
-                    color: 'rgba(29,140,248,0.0)',
-                    zeroLineColor: "transparent",
-                },
-                ticks: {
-                    suggestedMin: 60,
-                    suggestedMax: 125,
-                    padding: 20,
-                    fontColor: "#9a9a9a"
-                }
-                }],
-
-                xAxes: [{
-                barPercentage: 1.6,
-                gridLines: {
-                    drawBorder: false,
-                    color: 'rgba(225,78,202,0.1)',
-                    zeroLineColor: "transparent",
-                },
-                ticks: {
-                    padding: 20,
-                    fontColor: "#9a9a9a"
-                }
-                }]
-            }
-            
-            };
-
-            let ctx = document.getElementById("ProductSalesChart").getContext('2d');
-
-            var gradientStroke = ctx.createLinearGradient(0, 230, 0, 50);
-
-            gradientStroke.addColorStop(1, 'rgba(72,72,176,0.1)');
-            gradientStroke.addColorStop(0.4, 'rgba(72,72,176,0.0)');
-            gradientStroke.addColorStop(0, 'rgba(119,52,169,0)'); //purple colors
-            var config = {
-            type: 'line',
-            data: {
-            labels: chartLabels,
-            datasets: [{
-                    label: '# of Votes',
-                    data: chartData,
-                    borderWidth: 1,
-                    backgroundColor: {
-                        fill: '#FFC0CB'
-},
-            }]
-                },
-            options: gradientChartOptionsConfigurationWithTooltipPurple
-            };
-            new Chart(ctx, config);
-
+            commonChart(jsonData);
         } catch (error) {
             console.error('Error fetching or processing data:', error);
         }
-    }    
+    }
 
     $(document).ready(function () {
         // Javascript method's body can be found in assets/js/demos.js
@@ -346,11 +550,11 @@
         // return fetchAnnualSalesData(asin);
 
         // if(asin){
-           
+
         // }
         // return fetchDataAndCreateChart("TLM0100");        
     });
-     
+
 </script>
 
 
@@ -358,5 +562,3 @@
 
 
 {% endblock javascripts %}
-
-
