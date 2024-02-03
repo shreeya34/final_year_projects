@@ -21,48 +21,19 @@
                     </a>
                 </li>
             
+
+                
+                
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a href="category.html" target="_blank" class="nav-link">
+                            <i class="fas fa-list" style="margin-right: 5px; margin-left: 3px;"></i>
+                            <span style="font-weight: bold;">Categories</span>
+                        </a>
+                    </li>
+                </ul>
+                
             
-          
-                
-               
-                
-                
-                <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-                <script>
-                    $(document).ready(function() {
-                        // Click event listener for the CSV file link
-                        $('#csvFileLink').click(function(event) {
-                            event.preventDefault();  // Prevent default link behavior
-
-                            // Fetch and populate dropdown options
-                            fetchDropdownOptions();
-                        });
-
-                        // Function to fetch dropdown options
-                        function fetchDropdownOptions() {
-                            $.ajax({
-                                url: '/fetch_dropdown_options/',  // Replace with your URL to fetch dropdown options
-                                method: 'GET',
-                                success: function(data) {
-                                    populateDropdown(data.options);
-                                },
-                                error: function(error) {
-                                    console.log('Error fetching dropdown options:', error);
-                                }
-                            });
-                        }
-
-                        // Function to populate dropdown with fetched options
-                        function populateDropdown(options) {
-                            var dropdown = $('#csvDropdown');
-                            dropdown.empty();
-                            dropdown.append($('<option>').val('').text('Select an option'));
-                            $.each(options, function(index, option) {
-                                dropdown.append($('<option>').val(option.value).text(option.label));
-                            });
-                        }
-                    });
-                </script>
 
                
                 <li class="{% if 'user' in segment %} active {% endif %}">

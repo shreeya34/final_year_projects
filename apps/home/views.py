@@ -137,8 +137,6 @@ def search_products(request):
     
     print("Result: {0}".format(json_data))
     return JsonResponse(data=json_data,safe=False)
-
-    # return HttpResponse(f"You're viewing product: {asin}")
     
 def get_annual_data(request):
     asin = request.GET.get('asin')
@@ -215,31 +213,44 @@ def upload_to_influxdb(request):
         uploaded_file = request.FILES['file']
         csv_file_path = handle_uploaded_file(uploaded_file)
         write_api = influx_client.write_api(write_options=SYNCHRONOUS)
+        
+        
+
 
         # Process CSV data and prepare for InfluxDB
         with open(csv_file_path, 'r') as file:
             csv_reader = csv.DictReader(file)
             for row in csv_reader:
+                _measurement = 'ecommerce_products'
+                if row['_measurement'] != 'ecommerce_products':
+                    row['_measurement'] = 'ecommerce_products'
+
+
                 if '_measurement' not in row:
                     messages.warning(request, "Unsupported file: No measurement found.")
                     return redirect('/')
                   
                 # Create a Point for each row in the CSV
-                point = influxdb_client.Point(row['_measurement']) \
+                point = influxdb_client.Point(_measurement) \
                     .tag("asin", row['asin']) \
                     .tag("product_name", row['product_name']) \
+                    .tag("category", row['category']) \
                     .tag("user",request.session.get('username')) \
                     .field(row['_field'], float(row['_value'])) \
                     .time(row['_time'], influxdb_client.WritePrecision.NS)
+                    
+              
+
                 try:
                     # Write the point to the specified bucket
                     write_api.write(bucket=BUCKET_NAME, org=ORG_NAME, record=point)
                 except Exception as e:
                     print(f"Failed to write: {e}")
+                    
         messages.success(request,"Your File is Successfully Uploaded!")
         return redirect('/')
             
-# return JsonResponse({'success':True, 'message':"Your File is Successfully Uploaded!"})
+    # return JsonResponse({'success':True, 'message':"Your File is Successfully Uploaded!"})
     return render('/templates/includes/navigation.html') 
 
 def submitData(request):
@@ -257,7 +268,7 @@ def submitData(request):
                 # Your InfluxDB query
                 query_api = influx_client.query_api()
                 query = f'from(bucket: "new_amazon")\
-                    |> range(start: 2017-12-13T08:49:26.897825+00:00, stop: 2023-12-30T08:49:26.897825+00:00)\
+                    |> range(start: 2017-12-13T08:49:26.897825+00:00, stop: 2024-12-30T08:49:26.897825+00:00)\
                     |> filter(fn: (r) => r["_measurement"] == "ecommerce_products")\
                     |> filter(fn: (r) => r["user"] == "{user_name}")\
                     |> filter(fn: (r) => {asin_condition})\
@@ -280,11 +291,6 @@ def submitData(request):
             messages.error(request, f"Error in executing data: {e}")
             
     return redirect('/')
-
-    
-    
-
-
 
 from datetime import datetime
 
@@ -331,7 +337,7 @@ def get_asin(request):
     query_api = influx_client.query_api()
     if asin not in ['','null']:
         query = 'from(bucket: "new_amazon")\
-            |> range(start: 2017-12-13T08:49:26.897825+00:00, stop: 2023-12-30T08:49:26.897825+00:00)\
+            |> range(start: 2017-12-13T08:49:26.897825+00:00, stop: 2024-12-30T08:49:26.897825+00:00)\
             |> filter(fn: (r) => r["_measurement"] == "ecommerce_products")\
             |> filter(fn: (r) => r["user"] == "{}")\
             |> yield(name: "mean")'.format(user_name)
@@ -347,6 +353,28 @@ def get_asin(request):
     return JsonResponse(data=json_data,safe=False)
     
         
+def category_data(request):
+        user_name = request.session.get('username')
+        category = request.GET.get('category')
+        
+        query_api = influx_client.query_api()
+        if category not in ['','null']:
+                query = 'from(bucket: "new_amazon")\
+                    |> range(start: 2017-12-13T08:49:26.897825+00:00, stop: 2024-12-30T08:49:26.897825+00:00)\
+                    |> filter(fn: (r) => r["_measurement"] == "ecommerce_products")\
+                    |> filter(fn: (r) => r["user"] == "{}")\
+                    |> yield(name: "mean")'.format(user_name)
+                    
+        result = query_api.query(query=query,org='93eb79fe52548977')
+        json_data = []
+        for table in result:
+                for record in table.records:
+                    record_dict = record.values
+                    json_data.append(record_dict)
+            
+        print("Result: {0}".format(json_data))
+        return JsonResponse(data=json_data,safe=False)
+
     
 class Command(BaseCommand):
     help = 'Convert quoted string values to numerical data types'
