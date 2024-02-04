@@ -24,15 +24,14 @@
 
                 
                 
-                <ul class="navbar-nav">
-                    <li class="nav-item">
-                        <a href="category.html" target="_blank" class="nav-link">
-                            <i class="fas fa-list" style="margin-right: 5px; margin-left: 3px;"></i>
-                            <span style="font-weight: bold;">Categories</span>
-                        </a>
-                    </li>
-                </ul>
-                
+              
+
+                <li class="{% if 'category' in segment %} active {% endif %}">
+                    <a href="/category.html">
+                        <i class="fas fa-list" style="margin-right: 5px; margin-left: 3px;"></i>
+                        <p><span style="font-weight: bold;">Categories</span></p>
+                    </a>
+                </li>
             
 
                

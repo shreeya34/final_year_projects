@@ -83,6 +83,7 @@ def get_influx_data(request): #old way to upload static files
             point = influxdb_client.Point(row['_measurement']) \
                 .tag("asin", row['asin']) \
                 .tag("product_name", row['product_name']) \
+                .tag("category", row['category']) \
                 .field(row['_field'], float(row['_value'])) \
                 .time(row['_time'], influxdb_client.WritePrecision.NS)
             try:
@@ -100,11 +101,12 @@ def search_products(request):
     asin = request.GET.get('asin')
     product_name = request.GET.get('product_name')
     user_name = request.session.get('username')
+    category = request.GET.get('category')
     
     query_api = influx_client.query_api()
     if asin not in ['','null']:
         query = 'from(bucket: "new_amazon")\
-            |> range(start: 2013-12-13T08:49:26.897825+00:00, stop: 2023-12-30T08:49:26.897825+00:00)\
+            |> range(start: 2023-12-13T08:49:26.897825+00:00, stop: 2023-12-19T08:49:26.897825+00:00)\
             |> filter(fn: (r) => r["_measurement"] == "ecommerce_products")\
             |> filter(fn: (r) => r["_field"] == "actual_price")\
             |> filter(fn: (r) => r["asin"] == "{}")\
@@ -112,7 +114,7 @@ def search_products(request):
             |> yield(name: "mean")'.format(asin,user_name)
     elif product_name:
         query = 'from(bucket: "new_amazon")\
-            |> range(start: 2013-12-13T08:49:26.897825+00:00, stop: 2023-12-30T08:49:26.897825+00:00)\
+            |> range(start: 2023-12-13T08:49:26.897825+00:00, stop: 2023-12-19T08:49:26.897825+00:00)\
             |> filter(fn: (r) => r["_measurement"] == "ecommerce_products")\
             |> filter(fn: (r) => r["_field"] == "actual_price")\
             |> filter(fn: (r) => r["product_name"] == "{}")\
@@ -120,7 +122,7 @@ def search_products(request):
             |> yield(name: "mean")'.format(product_name,user_name)
     else:
         query = 'from(bucket: "new_amazon")\
-            |> range(start: 2021-12-13T08:49:26.897825+00:00, stop: 2023-12-30T08:49:26.897825+00:00)\
+            |> range(start: 2023-12-13T08:49:26.897825+00:00, stop: 2023-12-19T08:49:26.897825+00:00)\
             |> filter(fn: (r) => r["_measurement"] == "ecommerce_products")\
             |> filter(fn: (r) => r["_field"] == "actual_price")\
             |> filter(fn: (r) => r["user"] == "{}")\
@@ -143,7 +145,7 @@ def get_annual_data(request):
     query_api = influx_client.query_api()
     if asin not in ['','null']:
         query = 'from(bucket: "new_amazon")\
-            |> range(start: 2013-12-13T08:49:26.897825+00:00, stop: 2023-12-30T08:49:26.897825+00:00)\
+            |> range(start: 2023-12-13T08:49:26.897825+00:00, stop: 2023-12-30T08:49:26.897825+00:00)\
             |> filter(fn: (r) => r["_measurement"] == "ecommerce_products")\
             |> filter(fn: (r) => r["_field"] == "actual_price")\
             |> filter(fn: (r) => r["asin"] == "{}")\
@@ -213,9 +215,6 @@ def upload_to_influxdb(request):
         uploaded_file = request.FILES['file']
         csv_file_path = handle_uploaded_file(uploaded_file)
         write_api = influx_client.write_api(write_options=SYNCHRONOUS)
-        
-        
-
 
         # Process CSV data and prepare for InfluxDB
         with open(csv_file_path, 'r') as file:
@@ -268,7 +267,7 @@ def submitData(request):
                 # Your InfluxDB query
                 query_api = influx_client.query_api()
                 query = f'from(bucket: "new_amazon")\
-                    |> range(start: 2017-12-13T08:49:26.897825+00:00, stop: 2024-12-30T08:49:26.897825+00:00)\
+                    |> range(start: 2023-12-13T08:49:26.897825+00:00, stop: 2024-01-01T08:49:26.897825+00:00)\
                     |> filter(fn: (r) => r["_measurement"] == "ecommerce_products")\
                     |> filter(fn: (r) => r["user"] == "{user_name}")\
                     |> filter(fn: (r) => {asin_condition})\
@@ -291,8 +290,6 @@ def submitData(request):
             messages.error(request, f"Error in executing data: {e}")
             
     return redirect('/')
-
-from datetime import datetime
 
 
 def time_upload_to_influx(request):
@@ -322,8 +319,15 @@ def time_upload_to_influx(request):
 
         # Execute the InfluxDB query
         result =  query_api.query(query=query,org='93eb79fe52548977')
-        print(result)
+        response = []
+        for table in result:
+            for record in table.records:
+                record_dict = record.values
+                response.append(record_dict)
+
+        print("Result: {0}".format(response))
         messages.success(request, "InfluxDB query executed successfully within the specified time range.")
+        return JsonResponse(data=response,safe=False)
     except Exception as e:
         messages.error(request, f"Error in executing InfluxDB query: {e}")
 
