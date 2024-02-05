@@ -52,6 +52,17 @@ def login_view(request):
 
     return render(request, "accounts/login.html", {"form": form, "msg": msg})
 
+def upload_file(request):
+    if request.method == 'POST':
+        form = CSVUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            return redirect('/')  # Redirect to a success page or another view
+    else:
+        form = CSVUploadForm()
+
+    return render(request, 'csvfile.html', {'form': form})
+
 def my_view(request):
     # Save data to the session
     request.session['username'] = (username)
@@ -175,7 +186,7 @@ def ChangePassword(request , token):
 
 # file_upload_app/views.py
 from django.shortcuts import render
-from .forms import CSVUploadForm
+
 from django.views.decorators.csrf import csrf_protect
 
 

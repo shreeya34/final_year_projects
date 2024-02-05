@@ -25,6 +25,8 @@ from django.conf import settings
 import csv   
 import requests
 from .models import get_product_info
+from apps.authentication.models import UploadedCSV
+
 from django.core.management.base import BaseCommand
 import datetime
 from django.contrib import messages
@@ -214,6 +216,10 @@ def upload_to_influxdb(request):
     if request.method == 'POST' and request.FILES['file']:
         uploaded_file = request.FILES['file']
         csv_file_path = handle_uploaded_file(uploaded_file)
+        
+        uploaded_file_instance = UploadedCSV(csv_file=uploaded_file, user=request.user)
+        uploaded_file_instance.save()
+        
         write_api = influx_client.write_api(write_options=SYNCHRONOUS)
 
         # Process CSV data and prepare for InfluxDB
@@ -251,6 +257,10 @@ def upload_to_influxdb(request):
             
     # return JsonResponse({'success':True, 'message':"Your File is Successfully Uploaded!"})
     return render('/templates/includes/navigation.html') 
+
+def csv_file(request):
+    uploaded_files = UploadedCSV.objects.all()
+    return render(request, '/templates/home/csvfile.html', {'uploaded_files': uploaded_files})
 
 def submitData(request):
     if request.method == 'POST':

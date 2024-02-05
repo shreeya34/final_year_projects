@@ -24,6 +24,7 @@ urlpatterns = [
     path("getAsinData",views.get_asin,name="get_asin"),
     path("stats_data",views.submitData,name="submitData"),
     path("category_data",views.category_data,name="catogory_data"),
+    path('csv_file', views.csv_file, name='csv_file'),
     re_path(r'^.*\.*', views.pages, name='pages')
 
 ]
