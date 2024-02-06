@@ -11,6 +11,16 @@ class Profile(models.Model):
 
 def __str__(self):
         return f'{self.user.username}'
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100)
+    email = models.EmailField()
+    address = models.CharField(max_length=255, blank=True, null=True)
+    
+    
+    def __str__(self):
+        return f'{self.user.username} Profile'
   
 class File(models.Model):
     file = models.FileField(upload_to="files")  
@@ -28,7 +38,11 @@ class UploadedCSV(models.Model):
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"UploadedCSV: {self.csv_file.name} by {self.user.username}"
+       return f"{self.csv_file.name} - {self.user.username} - {self.uploaded_at}"
+    
+
+
+        
 
   
 

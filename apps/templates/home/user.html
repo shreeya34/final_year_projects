@@ -6,16 +6,17 @@
 {% block stylesheets %}{% endblock stylesheets %}
 
 {% block content %}
-
   <div class="content">
     <div class="row">
-      <div class="col-md-8">
+      <div class="col-md-8">   
         <div class="card">
           <div class="card-header">
             <h5 class="title">Edit Profile</h5>
           </div>
           <div class="card-body">
-            <form>
+            <form method="post">
+              {% csrf_token %}
+              
               <div class="row">
                 <div class="col-md-5 pr-md-1">
                   <div class="form-group">
@@ -26,35 +27,32 @@
                 <div class="col-md-3 px-md-1">
                   <div class="form-group">
                     <label>Username</label>
-                    <input type="text" class="form-control" placeholder="Username" value="{{user.username}}">
-                    
-                    
+                    <input type="text" class="form-control" placeholder="Username" value="{{ user.username }}">
                   </div>
                 </div>
                 <div class="col-md-4 pl-md-1">
                   <div class="form-group">
                     <label for="exampleInputEmail1">Email address</label>
-                 
-                    <input type="email" class="form-control" placeholder="mike@email.com" value="{{user.email}}">
+                    <input type="email" class="form-control" placeholder="mike@email.com" value="{{ user.email }}">
                   </div>
                 </div>
               </div>
+              
               <div class="row">
                 <div class="col-md-6 pr-md-1">
                   <div class="form-group">
                     <label>First Name</label>
-                    <div class = "data">{{user.first_name}}</div>
-                    <input type="text" class="form-control" placeholder="Company" >
+                    <input type="text" class="form-control" placeholder="First Name" value="{{ user.first_name }}">
                   </div>
                 </div>
                 <div class="col-md-6 pl-md-1">
                   <div class="form-group">
                     <label>Last Name</label>
-                    <div class = "data">{{user.last_name}}</div>
-                    <input type="text" class="form-control" placeholder="Last Name">
+                    <input type="text" class="form-control" placeholder="Last Name" value="{{ user.last_name }}">
                   </div>
                 </div>
               </div>
+              
               <div class="row">
                 <div class="col-md-12">
                   <div class="form-group">
@@ -63,18 +61,16 @@
                   </div>
                 </div>
               </div>
-           
-           
-            <button type="submit" class="btn btn-fill btn-primary">Save</button>
-          </div>
-         </div>
-     
-            </div>
+              
+              <button type="submit" class="btn btn-fill btn-primary">Save</button>
+            </form>
           </div>
         </div>
       </div>
     </div>
   </div>
+  
+ 
 
 {% endblock content %}
 

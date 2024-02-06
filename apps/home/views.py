@@ -26,6 +26,7 @@ import csv
 import requests
 from .models import get_product_info
 from apps.authentication.models import UploadedCSV
+from apps.authentication.forms import CSVUploadForm
 
 from django.core.management.base import BaseCommand
 import datetime
@@ -198,7 +199,7 @@ def get_data_view(request):
        return JsonResponse({'error': 'Failed to fetch data from InfluxDB'}, status=500)
     
 def handle_uploaded_file(uploaded_file):
-    destination_directory = os.path.join(settings.BASE_DIR, 'uploads')  # Adjust as needed
+    destination_directory = os.path.join(settings.BASE_DIR, 'files')  # Adjust as needed
 
     # Ensure the destination directory exists; create if it doesn't
     os.makedirs(destination_directory, exist_ok=True)
@@ -216,6 +217,13 @@ def upload_to_influxdb(request):
     if request.method == 'POST' and request.FILES['file']:
         uploaded_file = request.FILES['file']
         csv_file_path = handle_uploaded_file(uploaded_file)
+        form = CSVUploadForm(request.POST, request.FILES)
+
+        if form.is_valid():
+            uploaded_csv = form.save(commit=False)
+            uploaded_csv.user = request.user
+            uploaded_csv.save()
+
         
         uploaded_file_instance = UploadedCSV(csv_file=uploaded_file, user=request.user)
         uploaded_file_instance.save()
@@ -258,9 +266,24 @@ def upload_to_influxdb(request):
     # return JsonResponse({'success':True, 'message':"Your File is Successfully Uploaded!"})
     return render('/templates/includes/navigation.html') 
 
-def csv_file(request):
-    uploaded_files = UploadedCSV.objects.all()
-    return render(request, '/templates/home/csvfile.html', {'uploaded_files': uploaded_files})
+
+
+
+# def get_csv(self, request, user_id):
+#         try:
+#             user = user_id.objects.get(id=user_id)
+#             csv_file = UploadedCSV.objects.filter(user=user)
+
+#             context = {'user': user, 'csv_file': csv_file}
+#             return render(request, 'csvfile.html', context)
+
+#         except user_id.DoesNotExist:
+#             print("User does not exist.")
+#             # Handle the case where the user does not exist
+
+#         except UploadedCSV.DoesNotExist:
+#             print("No CSV data found for the user.")
+#             # Handle the case where no CSV data is found
 
 def submitData(request):
     if request.method == 'POST':

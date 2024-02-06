@@ -25,7 +25,7 @@ from .helper import send_forget_password_mail
 from django.views import View
 from .models import *
 from apps.authentication.models import TestOrderTable
-
+from .forms import UserProfileForm
 import uuid
 
 
@@ -52,16 +52,9 @@ def login_view(request):
 
     return render(request, "accounts/login.html", {"form": form, "msg": msg})
 
-def upload_file(request):
-    if request.method == 'POST':
-        form = CSVUploadForm(request.POST, request.FILES)
-        if form.is_valid():
-            form.save()
-            return redirect('/')  # Redirect to a success page or another view
-    else:
-        form = CSVUploadForm()
-
-    return render(request, 'csvfile.html', {'form': form})
+def csv_view(request):
+    uploaded_files = UploadedCSV.objects.filter(user=request.user)
+    return render(request, 'home/csvfile.html', {'uploaded_files': uploaded_files})
 
 def my_view(request):
     # Save data to the session
@@ -145,9 +138,15 @@ def ForgetPassword(request):
     return render(request, 'accounts/forgetPassword.html')
 
 def user_profile(request):
-    
-    return render(request, 'home/user.html')
+    if request.method == 'POST':
+        form = UserProfileForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            return redirect('user')
+    else:
+        form = UserProfileForm(instance=request.user)
 
+    return render(request, 'home/user.html', {'form': form})
 def ForgetPasswordPage(request):
     
     return (request, '/home/accounts/change_password.html')

@@ -1,6 +1,6 @@
 {% extends "layouts/base.html" %}
 
-{% block title %} Categories {% endblock %} 
+{% block title %} CSV Data {% endblock title %}
 
 <!-- Specific Page CSS goes HERE  -->
 {% block stylesheets %}{% endblock stylesheets %}
@@ -8,24 +8,22 @@
 {% block content %}
 <div class="row">
     <div class="col-lg-12 text-center">
-        <div class="card-body d-flex align-items-center justify-content-center" id="categoryContentBox" style="margin-top: 60px;">
-            <!-- Content for the category box -->
+        <div class="card-body d-flex flex-column align-items-center justify-content-center" id="categoryContentBox" style="margin-top: 60px;">
+            <h1>CSV Data for {{ user.username }}</h1>
             <table class="table">
                 <thead>
                     <tr>
-                        <th scope="col">Csv Files</th>
-                        <th scope="col">Uploaded Time</th>
-                        
-                        <!-- Add more columns as needed -->
+                        <th scope="col">Files</th>
+                        <th scope="col">Uploaded Date</th>
+                        <!-- Add more headers as needed -->
                     </tr>
                 </thead>
-                <tbody id="csvTableBody">
-                    {% for file in uploaded_files %}
+                <tbody>
+                    {% for entry in uploaded_files %}
                         <tr>
-                            <td>{{ file.file.name }}</td>
-                            <td>{{ file.upload_time }}</td>
-                            <td>{{ file.user.username }}</td>
-                            <!-- Add more columns as needed -->
+                            <td>{{ entry.csv_file.name }}</td>
+                            <td>{{ entry.uploaded_at }}</td>
+                            <!-- Add more fields as needed -->
                         </tr>
                     {% endfor %}
                 </tbody>
@@ -33,6 +31,7 @@
         </div>
     </div>
 </div>
+
 {% endblock content %}
 
 {% block javascripts %}{% endblock javascripts %}

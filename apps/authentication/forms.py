@@ -5,8 +5,10 @@ Copyright (c) 2019 - present AppSeed.us
 
 from django import forms
 
+from .models import UploadedCSV,UserProfile
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
+from django.contrib.auth.forms import UserChangeForm
 
 
 class LoginForm(forms.Form):
@@ -61,13 +63,16 @@ class SignUpForm(UserCreationForm):
         fields = ('username', 'email', 'password1', 'password2')
 
 
-# class CSVUploadForm(forms.Form):
-#     csvfile = forms.FileField(label='Select a CSV file')
-#     class Meta:
-#         model = UploadedCSV
-#         fields = ['file', 'user_id']
+class CSVUploadForm(forms.Form):
+    csvfile = forms.FileField(label='Select a CSV file')
+    class Meta:
+        model = UploadedCSV
+        fields = ['csv_file', 'user_id']
 
-
+class UserProfileForm(UserChangeForm):
+    class Meta:
+        model = UserProfile
+        fields = ['first_name', 'last_name', 'email', 'address']
 
 
 

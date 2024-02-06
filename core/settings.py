@@ -39,7 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-     'bootstrap_datepicker_plus',
+    'bootstrap_datepicker_plus',
     'apps.authentication',
     'apps.home'  # Enable the inner home (home)
 ]
