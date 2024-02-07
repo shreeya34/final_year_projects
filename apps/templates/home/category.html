@@ -8,14 +8,14 @@
 {% block content %}
 
 <div style="display: flex; justify-content: center; align-items: flex-end; height: 60vh;">
-    <div class="card card-chart" style="max-width: 1900px;height:650px">
+    <div class="card card-chart" style="max-width: 1400px; height: 450px; margin-left: 200px;">
         <div class="card-header">
             <h5 class="card-category">Total Sales</h5>
             <h3 class="card-title"><i class="tim-icons icon-bell-55 text-primary"></i> Weekly Dashboard</h3>
         </div>
         <div class="card-body">
             <div class="chart-area">
-                <canvas id="ProductSalesChart"></canvas>
+                <canvas id="categorySalesChart"></canvas>
             </div>
         </div>
     </div>
@@ -24,17 +24,20 @@
 
 <div class="row">
     <div class="col-lg-12 text-center mt-5 mb-3">
-        <div class="card card-chart mx-auto" style="height: 400px; max-width: 400px;">
+        <div class="card card-chart mx-auto" style="height: 300px; max-width: 400px;">
             <div class="card-header">
                 <h4 class="card-title">Categories</h4>
             </div>
-            <div class="card-body d-flex align-items-center justify-content-center" id="categoryContentBox">
+            <div class="card-body d-flex align-items-center justify-content-center" id="categoryContentBox"style="margin-top: -110px;">
                 <!-- Content for the category box -->
                 <!-- Add your content here -->
             </div>
+            <button type="button" id="submitButton" class="btn btn-primary"
+                style="position: relative; top: -30px;">Submit</button>
         </div>
     </div>
 </div>
+
 
 
   <style>
@@ -58,20 +61,57 @@
     }
   </style>
 
-<!-- <div class="d-flex justify-content-center">
-    <div class="card card-chart" style="height: 600px; max-width: 1800px;">
-        <div class="card-header">
-            <h5 class="card-category">Total Sales</h5>
-            <h3 class="card-title"><i class="tim-icons icon-bell-55 text-primary"></i> Weekly Dashboard</h3>
-        </div>
-        <div class="card-body">
-            <div class="chart-area">
-                <canvas id="ProductSalesChart"></canvas>
-            </div>
-        </div>
-    </div>
-</div> -->
 
+<script>
+    function getCookie(name) {
+        const cookieValue = document.cookie
+            .split('; ')
+            .find(row => row.startsWith(name + '='))
+            .split('=')[1];
+
+        return cookieValue ? decodeURIComponent(cookieValue) : null;
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+        const submitButton = document.getElementById('submitButton');
+
+        submitButton.addEventListener('click', async () => {
+            // Get selected ASIN and aggregate function values
+            const selectedCategory = document.querySelectorAll('input[id^="categoryContentBox"]:checked');
+            const selectedCategoryValue = Array.from(selectedCategory).map(checkbox => checkbox.value);
+            
+
+            console.log(selectedCategoryValue);
+            
+            const csrftoken = getCookie('csrftoken');
+
+            // Make sure both ASIN and aggregate function are selected
+            if (selectedCategoryValue && selectedStatistic) {
+                // Create a FormData object to send data to the server
+                const requestData = JSON.stringify({ 'asin': selectedCategoryValue, 'stats': selectedStatistic })
+                try {
+                    const stats_response = await fetch('/stats_data', {
+                        method: 'POST',
+                        body: requestData,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrftoken,
+
+                        },
+                    });
+
+                    const data = await stats_response.json();
+                    console.log(data);
+                    commonChart(data);
+                } catch (error) {
+                    console.log(error);
+                    // console.error('Error:', error);
+                }
+            } else {
+                alert('Please select category before submitting.');
+            }
+        });
+    });
+</script>
 
 <script>
     function fetchAnnualSalesData(asin) {
@@ -114,8 +154,131 @@
 </script>
 
 
+<script>
+
+    function getRandomColor() {
+        const random255 = () => Math.floor(Math.random() * 256);
+        const r = random255();
+        const g = random255();
+        const b = random255();
+
+        return `rgb(${r},${g},${b})`;
+    }
+
+    async function commonChart(categoryData) {
+        console.log("Common Chart");
+        console.log(categoryData);
+
+        try {
+            let chartLabels = [];
+            let datasets = [];
+
+            for (const categoryItem of categoryData) {
+                const { category, data } = categoryItem;
+
+                // Collect chart labels
+                chartLabels = data.map(item => item._time);
+
+                // Prepare dataset for the category
+                const dynamicBorderColor = getRandomColor();
+                const dataset = {
+                    label: `Category ${category}`,
+                    borderColor: dynamicBorderColor,
+                    data: data.map(item => item._value),
+                };
+
+                datasets.push(dataset);
+            }
+
+            const gradientChartOptionsConfigurationWithTooltipPurple = {
+                maintainAspectRatio: false,
+                legend: {
+                    display: false
+                },
+                tooltips: {
+                    backgroundColor: '#f5f5f5',
+                    titleFontColor: '#333',
+                    bodyFontColor: '#666',
+                    bodySpacing: 4,
+                    xPadding: 12,
+                    mode: "nearest",
+                    intersect: 0,
+                    position: "nearest"
+                },
+                responsive: true,
+                scales: {
+                    yAxes: [{
+                        barPercentage: 1.6,
+                        gridLines: {
+                            drawBorder: false,
+                            color: 'rgba(29,140,248,0.0)',
+                            zeroLineColor: "transparent",
+                        },
+                        ticks: {
+                            suggestedMin: 60,
+                            suggestedMax: 125,
+                            padding: 20,
+                            fontColor: "#9a9a9a"
+                        }
+                    }],
+                    xAxes: [{
+                        barPercentage: 1.6,
+                        gridLines: {
+                            drawBorder: false,
+                            color: 'rgba(225,78,202,0.1)',
+                            zeroLineColor: "transparent",
+                        },
+                        ticks: {
+                            padding: 20,
+                            fontColor: "#9a9a9a"
+                        },
+                    }]
+                }
+            };
+
+            let ctx = document.getElementById("categorySalesChart").getContext('2d');
+
+            if (window.productSalesChart) {
+                // Destroy the existing chart instance
+                window.productSalesChart.destroy();
+            }
+
+            const config = {
+                type: 'line',
+                data: {
+                    labels: chartLabels,
+                    datasets: datasets
+                },
+                options: gradientChartOptionsConfigurationWithTooltipPurple
+            };
+
+            window.productSalesChart = new Chart(ctx, config);
+
+        } catch (error) {
+            console.error('Error fetching or processing data:', error);
+        }
+    }
+
+    async function fetchCategoryData() {
+        try {
+            const categoryData = await fetch(`/get_category_data`); // Replace with your API endpoint
+            const jsonData = await categoryData.json();
+            commonChart(jsonData);
+        } catch (error) {
+            console.error('Error fetching or processing data:', error);
+        }
+    }
+
+    $(document).ready(function () {
+        fetchCategoryData();
+    });
 
 </script>
+
+
+
+
+
 {% endblock content %}
 
 <!-- Specific Page JS goes HERE  -->

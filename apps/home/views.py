@@ -199,7 +199,7 @@ def get_data_view(request):
        return JsonResponse({'error': 'Failed to fetch data from InfluxDB'}, status=500)
     
 def handle_uploaded_file(uploaded_file):
-    destination_directory = os.path.join(settings.BASE_DIR, 'files')  # Adjust as needed
+    destination_directory = os.path.join(settings.BASE_DIR, 'csv_files')  # Adjust as needed
 
     # Ensure the destination directory exists; create if it doesn't
     os.makedirs(destination_directory, exist_ok=True)
@@ -268,22 +268,6 @@ def upload_to_influxdb(request):
 
 
 
-
-# def get_csv(self, request, user_id):
-#         try:
-#             user = user_id.objects.get(id=user_id)
-#             csv_file = UploadedCSV.objects.filter(user=user)
-
-#             context = {'user': user, 'csv_file': csv_file}
-#             return render(request, 'csvfile.html', context)
-
-#         except user_id.DoesNotExist:
-#             print("User does not exist.")
-#             # Handle the case where the user does not exist
-
-#         except UploadedCSV.DoesNotExist:
-#             print("No CSV data found for the user.")
-#             # Handle the case where no CSV data is found
 
 def submitData(request):
     if request.method == 'POST':
@@ -412,6 +396,32 @@ def category_data(request):
         print("Result: {0}".format(json_data))
         return JsonResponse(data=json_data,safe=False)
 
+def get_category_data(request):
+    user_name = request.session.get('username')
+    
+    category = request.GET.get('category')
+    
+    if not category:
+        return JsonResponse({'error': 'No category provided'}, status=400)
+
+    query_api = influx_client.query_api()
+    query = f'from(bucket: "new_amazon")\
+        |> range(start: 2023-12-13T08:49:26.897825+00:00, stop: 2023-12-19T08:49:26.897825+00:00)\
+        |> filter(fn: (r) => r["_measurement"] == "ecommerce_products")\
+        |> filter(fn: (r) => r["_field"] == "actual_price")\
+        |> filter(fn: (r) => r["user"] == "{user_name}")\
+        |> yield(name: "mean")'
+
+    result = query_api.query(query=query, org='93eb79fe52548977')
+    
+    json_data = []
+    for table in result:
+        for record in table.records:
+            record_dict = record.values
+            json_data.append(record_dict)
+    
+    print("Result: {0}".format(json_data))
+    return JsonResponse(data=json_data, safe=False)
     
 class Command(BaseCommand):
     help = 'Convert quoted string values to numerical data types'

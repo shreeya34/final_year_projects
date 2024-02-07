@@ -49,6 +49,14 @@
                         <p><span style="font-weight: bold;">User Profile</span></p>
                     </a>
                 </li>
+
+                <li class="{% if 'user' in segment %} active {% endif %}">
+                    <a href="{% url 'activity_view'%}">
+                        <i class="fas fa-history"></i>
+                        <p><span style="font-weight: bold;">Activity Log</span></p>
+                    </a>
+                </li>
+               
                
     
                 <li>

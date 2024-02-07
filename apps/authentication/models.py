@@ -39,7 +39,11 @@ class UploadedCSV(models.Model):
 
     def __str__(self):
        return f"{self.csv_file.name} - {self.user.username} - {self.uploaded_at}"
-    
+
+class ActivityLog(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    action = models.CharField(max_length=255)
+    timestamp = models.DateTimeField(auto_now_add=True)    
 
 
         
