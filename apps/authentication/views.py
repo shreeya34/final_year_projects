@@ -27,7 +27,7 @@ from .models import *
 from apps.authentication.models import TestOrderTable
 from .forms import UserProfileForm
 import uuid
-from .utils import log_activity
+from apps.authentication.utils import log_activity
 
 
 def login_view(request):
@@ -95,18 +95,13 @@ def register_user(request):
 
 
 def activity_view(request):
-    
-    log_activity = ActivityLog.objects.all()# Log the activity
- 
+    log_activity = ActivityLog.objects.all()
     return render(request, 'accounts/log.html',{'log_activity': log_activity})
 
-def delete_log(request, log_id):
-    log_activity = get_object_or_404(ActivityLog, id=log_id)
-    log_activity.delete()
-    return redirect('accounts/log.html')
 
 
-from django.shortcuts import get_object_or_404
+
+
 
 def ForgetPassword(request):
     try:

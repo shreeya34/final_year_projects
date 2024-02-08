@@ -23,8 +23,8 @@ urlpatterns = [
     path("/getAnnualData",views.get_annual_data,name="get_annual_data"),
     path("getAsinData",views.get_asin,name="get_asin"),
     path("stats_data",views.submitData,name="submitData"),
-    path("categorydata",views.category_data,name="catogorydata"),
-    path("get_category_data",views.get_category_data,name="get_category_data"),
+    path("categorydata",views.get_all_category_data,name="catogorydata"),
+    path("get_category_data",views.get_category_data_by_name,name="get_category_data"),
     # path('csv_files', views.get_csv, name='csv_files'),
     re_path(r'^.*\.*', views.pages, name='pages'),
 

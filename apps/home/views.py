@@ -12,7 +12,6 @@ import os
 import random
 from django.conf import settings
 from django.shortcuts import redirect, render
-# import pandas as pd
 from django import template
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
@@ -374,31 +373,30 @@ def get_asin(request):
     return JsonResponse(data=json_data,safe=False)
     
         
-def category_data(request):
-        user_name = request.session.get('username')
-        category = request.GET.get('category')
-        
+def get_all_category_data(request):
+        user_name = request.session.get('username')        
         query_api = influx_client.query_api()
-        if category not in ['','null']:
-                query = 'from(bucket: "new_amazon")\
-                    |> range(start: 2017-12-13T08:49:26.897825+00:00, stop: 2024-12-30T08:49:26.897825+00:00)\
-                    |> filter(fn: (r) => r["_measurement"] == "ecommerce_products")\
-                    |> filter(fn: (r) => r["user"] == "{}")\
-                    |> yield(name: "mean")'.format(user_name)
+        query = 'from(bucket: "new_amazon")\
+        |> range(start: 2017-12-13T08:49:26.897825+00:00, stop: 2024-12-30T08:49:26.897825+00:00)\
+        |> filter(fn: (r) => r["_measurement"] == "ecommerce_products")\
+        |> filter(fn: (r) => r["user"] == "{}")\
+        |> group(columns: ["category"])\
+        |> last()\
+        |> yield(name: "mean")'.format(user_name)
                     
         result = query_api.query(query=query,org='93eb79fe52548977')
         json_data = []
         for table in result:
                 for record in table.records:
                     record_dict = record.values
-                    json_data.append(record_dict)
+                    cat = record_dict['category']
+                    json_data.append(cat)
             
         print("Result: {0}".format(json_data))
         return JsonResponse(data=json_data,safe=False)
 
-def get_category_data(request):
+def get_category_data_by_name(request):
     user_name = request.session.get('username')
-    
     category = request.GET.get('category')
     
     if not category:

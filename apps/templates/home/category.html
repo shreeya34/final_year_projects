@@ -32,7 +32,7 @@
                 <!-- Content for the category box -->
                 <!-- Add your content here -->
             </div>
-            <button type="button" id="submitButton" class="btn btn-primary"
+            <button type="button" id="CategorysubmitButton" class="btn btn-primary"
                 style="position: relative; top: -30px;">Submit</button>
         </div>
     </div>
@@ -54,11 +54,12 @@
         margin-right: 30px;
     }
 
-    #categoryContentBox .asin-checkbox-item {
+    #categoryContentBox .category-checkbox-item {
         margin-right: 30px;
-        margin-bottom: 20px;
+        margin-bottom: 300px;
         justify-content: center;
     }
+    
   </style>
 
 
@@ -72,7 +73,7 @@
         return cookieValue ? decodeURIComponent(cookieValue) : null;
     }
     document.addEventListener('DOMContentLoaded', () => {
-        const submitButton = document.getElementById('submitButton');
+        const submitButton = document.getElementById('CategorysubmitButton');
 
         submitButton.addEventListener('click', async () => {
             // Get selected ASIN and aggregate function values
@@ -111,46 +112,6 @@
             }
         });
     });
-</script>
-
-<script>
-    function fetchAnnualSalesData(asin) {
-        const asinData = fetch(`/getAsinData?asin=${asin}`)
-            .then(response => response.json())
-            .then(asinData => {
-                console.log(asinData);
-
-                let asinContentBox = document.getElementById("categoryContentBox");
-
-                // Extracting unique ASINs from jsonData using Set
-                let uniqueAsinSet = new Set();
-                let asinHtml = "<ul>";
-
-                for (let i = 0; i < asinData.length; i++) {
-                    const currentAsin = asinData[i].asin;
-                    const category = asinData[i].category;
-
-                    // Check if the ASIN is not in the set, then add it to the HTML
-                    if (!uniqueAsinSet.has(category)) {
-                        asinHtml += `<li class="asin-checkbox-item"><input type="checkbox" id="categoryContentBox${i}" name="selectedCategory" value="${category}"><label for="selectedCategory${i}">${category}</label></li>`;
-
-                        // Add the ASIN to the set to mark it as added
-                        uniqueAsinSet.add(category);
-                    }
-                }
-
-                asinHtml += "</ul>";
-
-                // Set the content of the categoryContentBox
-                asinContentBox.innerHTML = asinHtml;
-            })
-            .catch(error => {
-                console.error('Error fetching or processing data:', error);
-            });
-    }
-
-    // Example usage
-    fetchAnnualSalesData('asin_parameter');
 </script>
 
 
@@ -258,22 +219,63 @@
             console.error('Error fetching or processing data:', error);
         }
     }
+    </script>
 
-    async function fetchCategoryData() {
+
+<script>
+    async function fetchAllCategoryData() {
         try {
-            const categoryData = await fetch(`/get_category_data`); // Replace with your API endpoint
-            const jsonData = await categoryData.json();
-            commonChart(jsonData);
+            const response = await fetch('/categorydata'); // Replace with your API endpoint
+            const jsonData = await response.json();
+            updateCategoryContent(jsonData);
         } catch (error) {
             console.error('Error fetching or processing data:', error);
         }
     }
 
-    $(document).ready(function () {
-        fetchCategoryData();
-    });
+    function updateCategoryContent(data) {
+        const categoryContentBox = document.getElementById('categoryContentBox');
 
+        // Clear existing content
+        categoryContentBox.innerHTML = '';
+
+        // Iterate through the data and create checkboxes with labels
+        data.forEach(category => {
+            console.log(category)
+            const checkboxContainer = document.createElement('div');
+
+            // Create checkbox
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.name = 'selectedCategories'; // Use the same name for all checkboxes
+            checkbox.value = category; // Assuming 'name' is a property in your data
+            checkboxContainer.appendChild(checkbox);
+
+            // Create label for the checkbox
+            const label = document.createElement('label');
+            label.innerHTML = category; // Assuming 'name' is a property in your data
+            checkboxContainer.appendChild(label);
+
+            categoryContentBox.appendChild(checkboxContainer);
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        fetchAllCategoryData();
+    });
 </script>
+
+
+ 
+
+
+
+
+
+
+
+
+
 
 
 
