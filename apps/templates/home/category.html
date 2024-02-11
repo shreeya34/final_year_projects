@@ -56,7 +56,7 @@
 
     #categoryContentBox .category-checkbox-item {
         margin-right: 30px;
-        margin-bottom: 300px;
+        margin-bottom: 30px;
         justify-content: center;
     }
     
@@ -73,45 +73,40 @@
         return cookieValue ? decodeURIComponent(cookieValue) : null;
     }
     document.addEventListener('DOMContentLoaded', () => {
-        const submitButton = document.getElementById('CategorysubmitButton');
+    const submitButton = document.getElementById('CategorysubmitButton');
 
-        submitButton.addEventListener('click', async () => {
-            // Get selected ASIN and aggregate function values
-            const selectedCategory = document.querySelectorAll('input[id^="categoryContentBox"]:checked');
-            const selectedCategoryValue = Array.from(selectedCategory).map(checkbox => checkbox.value);
-            
+    submitButton.addEventListener('click', async () => {
+        // Get selected categories
+        const selectedCategories = document.querySelectorAll('input[name="selectedCategories"]:checked');
+        console.log(selectedCategories);
+        console.log("hey")
+        const selectedCategoryValues = Array.from(selectedCategories).map(checkbox => checkbox.value);
 
-            console.log(selectedCategoryValue);
-            
-            const csrftoken = getCookie('csrftoken');
+        const csrftoken = getCookie('csrftoken');
 
-            // Make sure both ASIN and aggregate function are selected
-            if (selectedCategoryValue && selectedStatistic) {
-                // Create a FormData object to send data to the server
-                const requestData = JSON.stringify({ 'asin': selectedCategoryValue, 'stats': selectedStatistic })
-                try {
-                    const stats_response = await fetch('/stats_data', {
-                        method: 'POST',
-                        body: requestData,
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': csrftoken,
+        if (selectedCategoryValues.length > 0) {
+            try {
+                const response = await fetch('/get_category_data', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken,
+                    },
+                    body: JSON.stringify({ selectedCategories: selectedCategoryValues }),
+                });
 
-                        },
-                    });
-
-                    const data = await stats_response.json();
-                    console.log(data);
-                    commonChart(data);
-                } catch (error) {
-                    console.log(error);
-                    // console.error('Error:', error);
-                }
-            } else {
-                alert('Please select category before submitting.');
+                const category = await response.json();
+                console.log(category);
+                commonChart(category);
+            } catch (error) {
+                console.error('Error fetching or processing data:', error);
             }
-        });
+        } else {
+            alert('Please select at least one category before submitting.');
+        }
     });
+});
+
 </script>
 
 
@@ -126,30 +121,84 @@
         return `rgb(${r},${g},${b})`;
     }
 
-    async function commonChart(categoryData) {
-        console.log("Common Chart");
-        console.log(categoryData);
-
+    function commonChart(data) {
+        // console.log("Common Chart");
+        // console.log(data);
         try {
             let chartLabels = [];
-            let datasets = [];
+            let chartData = [];
 
-            for (const categoryItem of categoryData) {
-                const { category, data } = categoryItem;
+            const groupedByASIN = data.reduce((result, item) => {
+                const { product_name, asin, _value,_time } = item;
+                // if(!chartLabels.contains(_time)){
+                chartLabels.push(_time);
+                // }
+                // Check if ASIN key exists in the result object
+                if (!result[asin]) {
+                    result[asin] = [];
+                }
 
-                // Collect chart labels
-                chartLabels = data.map(item => item._time);
+                // Push data for the respective ASIN
+                result[asin].push({ _time, product_name, _value });
 
-                // Prepare dataset for the category
+                return result;
+            }, {});
+            // Convert the grouped data to an array
+            const asinArray = Object.entries(groupedByASIN).map(([asin, values]) => ({
+                asin,
+                values,
+            }));
+            
+            // console.log(uniqueDatesArray);
+            var dateObjects = chartLabels.map(function (timestamp) {
+                return new Date(timestamp);
+            });
+
+            // Sort the date objects in ascending order
+            dateObjects.sort(function (a, b) {
+                return a - b;
+            });
+            console.log(dateObjects);
+
+            // Get the start and end dates
+            var startDate = dateObjects[0];
+            var endDate = dateObjects[dateObjects.length - 1];
+
+            // Format the start and end dates to "YYYY-MM-DD h:m"
+            var formattedStartDate = startDate.toISOString().slice(0, 16).replace("T", " ");
+            var formattedEndDate = endDate.toISOString().slice(0, 16).replace("T", " ");
+
+            // Filter labels based on the start and end dates
+            var filteredLabels = dateObjects.filter(function (timestamp) {
+                var date = new Date(timestamp);
+                return date >= startDate && date <= endDate;
+            });
+            var formattedLabels = dateObjects.map(function (date) {
+                    return date.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+            });
+            var uniqueDatesSet = new Set(formattedLabels);
+            var uniqueDatesArray = Array.from(uniqueDatesSet);
+            // console.log(filteredLabels);
+
+            const datasets = asinArray.map(({ asin, values }) => {
+                // Customize this part based on your requirements
                 const dynamicBorderColor = getRandomColor();
+                console.log(values);
+                let product_name = values[0]['product_name']
                 const dataset = {
-                    label: `Category ${category}`,
+                    label: `${product_name} (${asin})`,
                     borderColor: dynamicBorderColor,
-                    data: data.map(item => item._value),
+                    // backgroundColor: {product_name
+                    //     fill: '#FFC0CB'
+                    // },// Customize the color as needed
+                    data: values.map(({ _time, product_name, _value }) => (_value)),
                 };
 
-                datasets.push(dataset);
-            }
+                return dataset;
+            });
+
+            console.log(datasets);
+
 
             const gradientChartOptionsConfigurationWithTooltipPurple = {
                 maintainAspectRatio: false,
@@ -182,6 +231,7 @@
                             fontColor: "#9a9a9a"
                         }
                     }],
+
                     xAxes: [{
                         barPercentage: 1.6,
                         gridLines: {
@@ -193,27 +243,43 @@
                             padding: 20,
                             fontColor: "#9a9a9a"
                         },
+                        // type: 'time',
+                        // time: {
+                        //     unit: 'day',
+                        //     round: 'week'
+                        // }
+                       
                     }]
                 }
+
             };
 
+
+
             let ctx = document.getElementById("categorySalesChart").getContext('2d');
-
-            if (window.productSalesChart) {
-                // Destroy the existing chart instance
-                window.productSalesChart.destroy();
+            try{
+            
+                if (window.categorySalesChart) {
+                    // Destroy the existing chart instance
+                    window.categorySalesChart.destroy();
+                }
+            }catch(e){
+                console.log("categorySalesChart not found",e);
             }
+            var gradientStroke = ctx.createLinearGradient(0, 230, 0, 50);
 
-            const config = {
+            gradientStroke.addColorStop(1, 'rgba(72,72,176,0.1)');
+            gradientStroke.addColorStop(0.4, 'rgba(72,72,176,0.0)');
+            gradientStroke.addColorStop(0, 'rgba(119,52,169,0)'); //purple colors
+            var config = {
                 type: 'line',
                 data: {
-                    labels: chartLabels,
+                    labels: uniqueDatesArray,
                     datasets: datasets
                 },
                 options: gradientChartOptionsConfigurationWithTooltipPurple
             };
-
-            window.productSalesChart = new Chart(ctx, config);
+            window.categorySalesChart = new Chart(ctx, config);
 
         } catch (error) {
             console.error('Error fetching or processing data:', error);
@@ -264,21 +330,6 @@
         fetchAllCategoryData();
     });
 </script>
-
-
- 
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 {% endblock content %}

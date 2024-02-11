@@ -24,10 +24,9 @@ from django.contrib.auth.models import User
 from .helper import send_forget_password_mail
 from django.views import View
 from .models import *
-from apps.authentication.models import TestOrderTable
+from .utils import log_activity
 from .forms import UserProfileForm
 import uuid
-from apps.authentication.utils import log_activity
 
 
 def login_view(request):
@@ -95,12 +94,9 @@ def register_user(request):
 
 
 def activity_view(request):
-    log_activity = ActivityLog.objects.all()
-    return render(request, 'accounts/log.html',{'log_activity': log_activity})
-
-
-
-
+  
+   log_activity= ActivityLog.objects.all# Log the activity
+   return render(request, 'accounts/log.html',{'log_activity':log_activity})
 
 
 def ForgetPassword(request):
@@ -150,7 +146,7 @@ def user_profile(request):
             form.save()
             return redirect('user')
     else:
-        form = UserProfileForm(instance=request.user)
+        form = UserProfileForm(instance=request.user, initial={'username': request.user.username})
 
     return render(request, 'home/user.html', {'form': form})
 def ForgetPasswordPage(request):
@@ -209,7 +205,7 @@ def csv_upload_view(request):
         create_db(obj.file)
     return render (request,'home/index.html')
 
-# views.py
+
 
 def display_asin(request):
     user_uploaded_csv = UploadedCSV.objects.filter(user=request.user)

@@ -282,8 +282,8 @@
     }
 
     function commonChart(data) {
-        console.log("Common Chart");
-        console.log(data);
+        // console.log("Common Chart");
+        // console.log(data);
         try {
             let chartLabels = [];
             let chartData = [];
@@ -306,6 +306,38 @@
                 asin,
                 values,
             }));
+
+            
+            console.log(uniqueDatesArray);
+            var dateObjects = chartLabels.map(function (timestamp) {
+                return new Date(timestamp);
+            });
+
+            // Sort the date objects in ascending order
+            dateObjects.sort(function (a, b) {
+                return a - b;
+            });
+            console.log(dateObjects);
+
+            // Get the start and end dates
+            var startDate = dateObjects[0];
+            var endDate = dateObjects[dateObjects.length - 1];
+
+            // Format the start and end dates to "YYYY-MM-DD h:m"
+            var formattedStartDate = startDate.toISOString().slice(0, 16).replace("T", " ");
+            var formattedEndDate = endDate.toISOString().slice(0, 16).replace("T", " ");
+
+            // Filter labels based on the start and end dates
+            var filteredLabels = dateObjects.filter(function (timestamp) {
+                var date = new Date(timestamp);
+                return date >= startDate && date <= endDate;
+            });
+            var formattedLabels = dateObjects.map(function (date) {
+                    return date.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+            });
+
+            var uniqueDatesSet = new Set(formattedLabels);
+            var uniqueDatesArray = Array.from(uniqueDatesSet);
 
             const datasets = asinArray.map(({ asin, values }) => {
                 // Customize this part based on your requirements
@@ -397,7 +429,7 @@
             var config = {
                 type: 'line',
                 data: {
-                    labels: chartLabels,
+                    labels: uniqueDatesArray,
                     datasets: datasets
                 },
                 options: gradientChartOptionsConfigurationWithTooltipPurple
