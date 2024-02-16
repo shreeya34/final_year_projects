@@ -94,9 +94,9 @@ def register_user(request):
 
 
 def activity_view(request):
-  
-   log_activity= ActivityLog.objects.all# Log the activity
-   return render(request, 'accounts/log.html',{'log_activity':log_activity})
+  log_activity = ActivityLog.objects.filter(user=request.user) 
+  return render(request, 'accounts/log.html',{'log_activity':log_activity})
+ 
 
 
 def ForgetPassword(request):

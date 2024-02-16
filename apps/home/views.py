@@ -28,6 +28,8 @@ import requests
 from .models import get_product_info
 from apps.authentication.models import UploadedCSV
 from apps.authentication.forms import CSVUploadForm
+from pmdarima import auto_arima
+import pandas as pd
 
 from django.core.management.base import BaseCommand
 import datetime
@@ -424,6 +426,7 @@ def get_category_data_by_name(request):
                     |> filter(fn: (r) => r["_field"] == "actual_price")\
                     |> filter(fn: (r) => r["category"] =~ /{ "|".join(selected_categories) }/) \
                     |> filter(fn: (r) => r["user"] == "{user_name}")\
+                    |> group(columns: ["category"])\
                     |> yield(name: "mean")'
 
                 result = query_api.query(query=query, org='93eb79fe52548977')
@@ -433,7 +436,22 @@ def get_category_data_by_name(request):
                     for record in table.records:
                         record_dict = record.values
                         json_data.append(record_dict)
-                
+                #arima model code, should be separated from this function later.
+                df = pd.DataFrame(json_data)
+                df['_time'] = pd.to_datetime(df['_time'])
+                # df.set_index('_time', inplace=True)
+                time_series_data = df['_value']
+                try:
+                    # aggregated_df = df.groupby('_time')['_value'].mean().reset_index()
+                    arima_model = auto_arima(time_series_data, seasonal=True)  # Assuming weekly seasonality
+                    forecast, conf_int = arima_model.predict(n_periods=7, return_conf_int=True)
+                except Exception as e:
+                    pass
+                    
+                #forecast will contain the predicted values for the next 7 days
+                #conf_int will contain the corresponding confidence intervals. 
+                #The confidence intervals provide an indication of the uncertainty associated with each forecasted value. 
+                #The narrower the interval, the more confident the model is in its prediction.
                 print("Result: {0}".format(json_data))
                 return JsonResponse(data=json_data, safe=False)
         except Exception as e:

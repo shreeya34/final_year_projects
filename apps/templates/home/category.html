@@ -11,7 +11,7 @@
     <div class="card card-chart" style="max-width: 1400px; height: 450px; margin-left: 200px;">
         <div class="card-header">
             <h5 class="card-category">Total Sales</h5>
-            <h3 class="card-title"><i class="tim-icons icon-bell-55 text-primary"></i> Weekly Dashboard</h3>
+            <h3 class="card-title"><i class="tim-icons icon-bell-55 text-primary"></i> Category Dashboard</h3>
         </div>
         <div class="card-body">
             <div class="chart-area">
@@ -78,8 +78,8 @@
     submitButton.addEventListener('click', async () => {
         // Get selected categories
         const selectedCategories = document.querySelectorAll('input[name="selectedCategories"]:checked');
-        console.log(selectedCategories);
-        console.log("hey")
+        // console.log(selectedCategories);
+        // console.log("hey")
         const selectedCategoryValues = Array.from(selectedCategories).map(checkbox => checkbox.value);
 
         const csrftoken = getCookie('csrftoken');
@@ -293,26 +293,55 @@
         try {
             const response = await fetch('/categorydata'); // Replace with your API endpoint
             const jsonData = await response.json();
-            updateCategoryContent(jsonData);
+            await updateCategoryContent(jsonData);
+            const categoryContentBox = document.getElementById('categoryContentBox');
+
+            const checkboxes = categoryContentBox.querySelectorAll('[name="selectedCategories"]');
+            // Check the first checkbox
+            checkboxes[0].checked = true;
+            const firstCheckboxValue = checkboxes[0].value;
+            const csrftoken = getCookie('csrftoken');
+
+            try {
+                const response = await fetch('/get_category_data', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken,
+                    },
+                    body: JSON.stringify({ selectedCategories: [firstCheckboxValue] }),
+                });
+
+                const category = await response.json();
+                console.log(category);
+                commonChart(category);
+            } catch (error) {
+                console.error('Error fetching or processing data:', error);
+            }
         } catch (error) {
             console.error('Error fetching or processing data:', error);
         }
     }
 
-    function updateCategoryContent(data) {
+    async function updateCategoryContent(data) {
         const categoryContentBox = document.getElementById('categoryContentBox');
 
         // Clear existing content
         categoryContentBox.innerHTML = '';
+        // <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault">
+        // <label class="form-check-label" for="flexCheckDefault">
+        //     Default checkbox
+        // </label>
 
         // Iterate through the data and create checkboxes with labels
-        data.forEach(category => {
-            console.log(category)
+        await data.forEach(category => {
+            // console.log(category)
             const checkboxContainer = document.createElement('div');
-
+            // checkboxContainer.classList.add("form-check"); // Add the desired class to the div
             // Create checkbox
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
+            // checkbox.classList.add("form-check-input");
             checkbox.name = 'selectedCategories'; // Use the same name for all checkboxes
             checkbox.value = category; // Assuming 'name' is a property in your data
             checkboxContainer.appendChild(checkbox);
@@ -320,6 +349,7 @@
             // Create label for the checkbox
             const label = document.createElement('label');
             label.innerHTML = category; // Assuming 'name' is a property in your data
+            // label.classList.add("form-check-label");
             checkboxContainer.appendChild(label);
 
             categoryContentBox.appendChild(checkboxContainer);

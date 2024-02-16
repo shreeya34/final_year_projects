@@ -25,7 +25,7 @@ class UserProfile(models.Model):
 class File(models.Model):
     file = models.FileField(upload_to="files")  
     
-    from django.db import models
+   
 
 class TestOrderTable(models.Model):
     # Define your fields for TestOrderTable
