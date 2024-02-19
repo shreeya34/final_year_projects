@@ -25,8 +25,6 @@ class UserProfile(models.Model):
 class File(models.Model):
     file = models.FileField(upload_to="files")  
     
-   
-
 class TestOrderTable(models.Model):
     # Define your fields for TestOrderTable
     pass
@@ -36,9 +34,9 @@ class UploadedCSV(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     csv_file = models.FileField(upload_to='csv_files')
     uploaded_at = models.DateTimeField(auto_now_add=True)
-
+    is_deleted = models.BooleanField(default=False)
     def __str__(self):
-       return f"{self.csv_file.name} - {self.user.username} - {self.uploaded_at}"
+       return f"{self.id} - {self.csv_file.name} - {self.user.username} - {self.uploaded_at}"
 
 class ActivityLog(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)

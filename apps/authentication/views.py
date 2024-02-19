@@ -43,6 +43,7 @@ def login_view(request):
             if user is not None:
                 login(request, user)
                 request.session['username'] = (username)
+                request.session['user_id'] = (user.id)
                 request.session['is_logged_in'] = True
                 return redirect("/")
             else:
@@ -53,7 +54,7 @@ def login_view(request):
     return render(request, "accounts/login.html", {"form": form, "msg": msg})
 
 def csv_view(request):
-    uploaded_files = UploadedCSV.objects.filter(user=request.user)
+    uploaded_files = UploadedCSV.objects.filter(user=request.user,is_deleted=False)
     return render(request, 'home/csvfile.html', {'uploaded_files': uploaded_files})
 
 def my_view(request):
@@ -205,6 +206,17 @@ def csv_upload_view(request):
         create_db(obj.file)
     return render (request,'home/index.html')
 
+def delete_entry(request, entry_id):
+    try:
+        entry = UploadedCSV.objects.get(id=entry_id)
+        entry.is_deleted = True
+        entry.save()
+        # entry.delete()
+        messages.success(request, 'Entry deleted successfully.')
+    except UploadedCSV.DoesNotExist:
+        messages.error(request, 'Entry not found.')
+    
+    return redirect('csv_view')
 
 
 def display_asin(request):

@@ -25,6 +25,7 @@ urlpatterns = [
     path("stats_data",views.submitData,name="submitData"),
     path("categorydata",views.get_all_category_data,name="catogorydata"),
     path("get_category_data",views.get_category_data_by_name,name="get_category_data"),
+    path("get_delete_data_by_file",views.delete_data_by_file,name="get_delete_data_by_file"),
     # path('csv_files', views.get_csv, name='csv_files'),
     re_path(r'^.*\.*', views.pages, name='pages'),
 

@@ -30,6 +30,7 @@ from apps.authentication.models import UploadedCSV
 from apps.authentication.forms import CSVUploadForm
 from pmdarima import auto_arima
 import pandas as pd
+from apps.authentication.utils import log_activity
 
 from django.core.management.base import BaseCommand
 import datetime
@@ -252,6 +253,7 @@ def upload_to_influxdb(request):
                     .tag("product_name", row['product_name']) \
                     .tag("category", row['category']) \
                     .tag("user",request.session.get('username')) \
+                    .tag("files", uploaded_file_instance.id)\
                     .field(row['_field'], float(row['_value'])) \
                     .time(row['_time'], influxdb_client.WritePrecision.NS)
                     
@@ -262,16 +264,44 @@ def upload_to_influxdb(request):
                     write_api.write(bucket=BUCKET_NAME, org=ORG_NAME, record=point)
                 except Exception as e:
                     print(f"Failed to write: {e}")
-                    
+        log_activity(request.user, "Uploaded a file")  # Log the activity     
         messages.success(request,"Your File is Successfully Uploaded!")
         return redirect('/')
             
     # return JsonResponse({'success':True, 'message':"Your File is Successfully Uploaded!"})
     return render('/templates/includes/navigation.html') 
 
+def delete_data_by_file(request):
+    user_name = request.session.get('username')
 
+    try:
+        # Assuming 'file' is the name of the file input in your HTML form
+        uploaded_file = request.FILES.get('file')
 
+        if not uploaded_file:
+            return JsonResponse(data={"status": "error", "message": "Invalid file"}, safe=False)
 
+        # Use your handle_uploaded_file function to get the file name or path
+        csv_file_path = handle_uploaded_file(uploaded_file)
+
+        query_api = influx_client.query_api()
+
+        # Construct delete query based on the file name
+        delete_query = f'from(bucket: "new_amazon") \
+                        |> filter(fn: (r) => r["_measurement"] == "ecommerce_products") \
+                        |> filter(fn: (r) => r["user"] == "{user_name}" and r["files"] == "{uploaded_file.name}") \
+                        |> delete()'
+
+        # Execute the delete query
+        result = query_api.query(query=delete_query, org='93eb79fe52548977')
+        print("Delete Result: {0}".format(result))
+        log_activity(request.user, "Deleted a file") 
+        return JsonResponse(data={"status": "success"}, safe=False)
+
+    except Exception as e:
+        print(f"Failed to delete data: {e}")
+    return JsonResponse(data={"status": "error", "message": str(e)}, safe=False)
+    
 def submitData(request):
     if request.method == 'POST':
         try:
