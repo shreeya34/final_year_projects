@@ -3,8 +3,7 @@
 Copyright (c) 2019 - present AppSeed.us
 """
 
-from datetime import datetime
-import datetime
+from datetime import datetime, timedelta
 
 import http
 from http import client
@@ -33,7 +32,6 @@ import pandas as pd
 from apps.authentication.utils import log_activity
 
 from django.core.management.base import BaseCommand
-import datetime
 from django.contrib import messages
 
 BUCKET_NAME = settings.INFLUXDB_SETTINGS['bucket']
@@ -102,38 +100,52 @@ def get_influx_data(request): #old way to upload static files
 
     return JsonResponse({'success':True, 'message':"Data Written Succesfully to Influx"})
             
-   
+def get_cookie_dates(request):
+     # Get the current date and time
+    end_time = datetime.now()
+
+    # Calculate the start time (last one month)
+    start_time = end_time - timedelta(days=180)
+
+    # Format the start time and end time as strings in '%Y-%m-%d %H:%M:%S' format
+    start_time_str = start_time.strftime('%Y-%m-%dT%H:%M:%SZ')
+    end_time_str = end_time.strftime('%Y-%m-%dT%H:%M:%SZ')
+    start_time = request.COOKIES.get('start_time', start_time_str)
+    end_time = request.COOKIES.get('end_time', end_time_str)
+    return start_time, end_time
+
 def search_products(request): 
 
     asin = request.GET.get('asin')
+   
     product_name = request.GET.get('product_name')
     user_name = request.session.get('username')
     category = request.GET.get('category')
-    
+    start_time, end_time = get_cookie_dates(request)
     query_api = influx_client.query_api()
     if asin not in ['','null']:
-        query = 'from(bucket: "new_amazon")\
-            |> range(start: 2023-12-13T08:49:26.897825+00:00, stop: 2023-12-19T08:49:26.897825+00:00)\
+        query = f'from(bucket: "new_amazon")\
+            |> range(start: {start_time}, stop: {end_time})\
             |> filter(fn: (r) => r["_measurement"] == "ecommerce_products")\
             |> filter(fn: (r) => r["_field"] == "actual_price")\
-            |> filter(fn: (r) => r["asin"] == "{}")\
-            |> filter(fn: (r) => r["user"] == "{}")\
-            |> yield(name: "mean")'.format(asin,user_name)
+            |> filter(fn: (r) => r["asin"] == "{asin}")\
+            |> filter(fn: (r) => r["user"] == "{user_name}")\
+            |> yield(name: "mean")'
     elif product_name:
-        query = 'from(bucket: "new_amazon")\
-            |> range(start: 2023-12-13T08:49:26.897825+00:00, stop: 2023-12-19T08:49:26.897825+00:00)\
+        query = f'from(bucket: "new_amazon")\
+            |> range(start: {start_time}, stop: {end_time})\
             |> filter(fn: (r) => r["_measurement"] == "ecommerce_products")\
             |> filter(fn: (r) => r["_field"] == "actual_price")\
-            |> filter(fn: (r) => r["product_name"] == "{}")\
-            |> filter(fn: (r) => r["user"] == "{}")\
-            |> yield(name: "mean")'.format(product_name,user_name)
+            |> filter(fn: (r) => r["product_name"] == "{product_name}")\
+            |> filter(fn: (r) => r["user"] == "{user_name}")\
+            |> yield(name: "mean")'
     else:
-        query = 'from(bucket: "new_amazon")\
-            |> range(start: 2023-12-13T08:49:26.897825+00:00, stop: 2023-12-19T08:49:26.897825+00:00)\
+        query = f'from(bucket: "new_amazon")\
+            |> range(start: {start_time}, stop: {end_time})\
             |> filter(fn: (r) => r["_measurement"] == "ecommerce_products")\
             |> filter(fn: (r) => r["_field"] == "actual_price")\
-            |> filter(fn: (r) => r["user"] == "{}")\
-            |> yield(name: "mean")'.format(user_name)
+            |> filter(fn: (r) => r["user"] == "{user_name}")\
+            |> yield(name: "mean")'
     # else:
     #     return JsonResponse({'error': 'No search parameter provided'}, status=400)     
 
@@ -149,15 +161,18 @@ def search_products(request):
     
 def get_annual_data(request):
     asin = request.GET.get('asin')
+    start_time, end_time = get_cookie_dates(request)
+    user_name = request.session.get('username')
+
     query_api = influx_client.query_api()
     if asin not in ['','null']:
         query = 'from(bucket: "new_amazon")\
-            |> range(start: 2023-12-13T08:49:26.897825+00:00, stop: 2023-12-30T08:49:26.897825+00:00)\
+            |> range(start: {}, stop: {})\
             |> filter(fn: (r) => r["_measurement"] == "ecommerce_products")\
             |> filter(fn: (r) => r["_field"] == "actual_price")\
             |> filter(fn: (r) => r["asin"] == "{}")\
             |> filter(fn: (r) => r["user"] == "{}")\
-            |> yield(name: "mean")'.format(asin)
+            |> yield(name: "mean")'.format(start_time,end_time,asin,user_name)
     result = query_api.query(query=query,org='93eb79fe52548977')
     json_data = []
     for table in result:
@@ -353,34 +368,48 @@ def time_upload_to_influx(request):
 
     try:
         # Convert received strings to datetime objects
-        start_date_object = datetime.strptime(start_time, '%Y-%m-%d %H:%M:%S')
-        end_date_object = datetime.strptime(end_time, '%Y-%m-%d %H:%M:%S')
-        formatted_start_date = start_date_object.strftime('%Y-%m-%dT%H:%M:%SZ')
-        formatted_end_date = end_date_object.strftime('%Y-%m-%dT%H:%M:%SZ')
+        # start_date_object = datetime.strptime(start_time, '%Y-%m-%d %H:%M:%S')
+        parsed_date = datetime.strptime(start_time, '%a %b %d %Y %H:%M:%S GMT%z')
+        formatted_start_date = parsed_date.strftime('%Y-%m-%dT%H:%M:%SZ')
+                # formatted_start_date = start_date_object.strftime('%Y-%m-%dT%H:%M:%SZ')
 
-        query_api = influx_client.query_api()
+        parsed_date = datetime.strptime(end_time, '%a %b %d %Y %H:%M:%S GMT%z')
+        formatted_end_date = parsed_date.strftime('%Y-%m-%dT%H:%M:%SZ')
+        # end_date_object = datetime.strptime(end_time, '%Y-%m-%d %H:%M:%S')
+        # formatted_end_date = end_date_object.strftime('%Y-%m-%dT%H:%M:%SZ')
+        
+        
 
-        # Replace '{{}}' with the actual ASIN value
-        asin_value = "your_asin_value"  # Replace with the actual ASIN value
-        query = f'from(bucket: "new_amazon")\
-                 |> range(start: {formatted_start_date}, stop: {formatted_end_date})\
-                 |> filter(fn: (r) => r["_measurement"] == "ecommerce_products")\
-                 |> filter(fn: (r) => r["_field"] == "actual_price")\
-                 |> filter(fn: (r) => r["asin"] == "{asin_value}")\
-                 |> yield(name: "mean")'
+        # query_api = influx_client.query_api()
 
-        # Execute the InfluxDB query
-        result = query_api.query(query=query, org='93eb79fe52548977')
-        response = []
+        # # Replace '{{}}' with the actual ASIN value
+        # query = f'from(bucket: "new_amazon")\
+        #          |> range(start: {formatted_start_date}, stop: {formatted_end_date})\
+        #          |> filter(fn: (r) => r["_measurement"] == "ecommerce_products")\
+        #          |> filter(fn: (r) => r["_field"] == "actual_price")\
+        #          |> yield(name: "mean")'
 
-        for table in result:
-            for record in table.records:
-                record_dict = record.values
-                response.append(record_dict)
+        # # Execute the InfluxDB query
+        # result = query_api.query(query=query, org='93eb79fe52548977')
+        # if len(result) == 0:
+        #     messages.error(request, f"No data found in selected daterange.")
+        #     return redirect('/')
 
-        print("Result: {0}".format(response))
+            
+        # j_response = []
+
+        # for table in result:
+        #     for record in table.records:
+        #         record_dict = record.values
+        #         j_response.append(record_dict)
+        # response = JsonResponse(j_response,safe=False)
+        
+        response =  redirect('/')
+        cookie_expiration = datetime.now() + timedelta(days=30)
+        response.set_cookie('start_time',formatted_start_date,expires=cookie_expiration)
+        response.set_cookie('end_time',formatted_end_date,expires=cookie_expiration)
         messages.success(request, "InfluxDB query executed successfully within the specified time range.")
-        return JsonResponse(data=response, safe=False)
+        return response
     except Exception as e:
         print(f"Error: {e}")
         messages.error(request, f"Error in executing InfluxDB query: {e}")
@@ -410,7 +439,30 @@ def get_asin(request):
     print("Result: {0}".format(json_data))
     return JsonResponse(data=json_data,safe=False)
     
+def get_all_category_sales_count(request):
+    user_name = request.session.get('username')        
+    query_api = influx_client.query_api()
+    query = 'from(bucket: "new_amazon")\
+    |> range(start: 2017-12-13T08:49:26.897825+00:00, stop: 2024-02-01T08:49:26.897825+00:00)\
+    |> filter(fn: (r) => r["_measurement"] == "ecommerce_products")\
+    |> filter(fn: (r) => r["user"] == "{}")\
+    |> filter(fn: (r) => r["_field"] == "sale_price")\
+    |> group(columns: ["category"])\
+    |> count()\
+    |> yield(name: "count")'.format(user_name)
+    result = query_api.query(query=query,org='93eb79fe52548977')
+    json_data = dict()
+    for table in result:
+            for record in table.records:
+                record_dict = record.values
+                cat = record_dict['category']
+                json_data[record_dict['category']]  = record_dict['_value']
         
+    print("Result: {0}".format(json_data))
+    return JsonResponse(data=json_data,safe=False)
+            
+
+
 def get_all_category_data(request):
         user_name = request.session.get('username')        
         query_api = influx_client.query_api()
@@ -487,36 +539,36 @@ def get_category_data_by_name(request):
         except Exception as e:
                 messages.error(request, f"Error in executing data: {e}")
                         
-class Command(BaseCommand):
-    help = 'Convert quoted string values to numerical data types'
+# class Command(BaseCommand):
+#     help = 'Convert quoted string values to numerical data types'
 
-    def add_arguments(self, parser):
-        parser.add_argument('input_file', type=str, help='Input CSV file')
-        parser.add_argument('output_file', type=str, help='Output CSV file')
+#     def add_arguments(self, parser):
+#         parser.add_argument('input_file', type=str, help='Input CSV file')
+#         parser.add_argument('output_file', type=str, help='Output CSV file')
 
-    def handle(self, *args, **options):
-        input_file = options['input_file']
-        output_file = options['output_file']
+#     def handle(self, *args, **options):
+#         input_file = options['input_file']
+#         output_file = options['output_file']
 
-        with open(input_file, 'r') as infile, open(output_file, 'w', newline='') as outfile:
-            reader = csv.DictReader(infile)
-            fieldnames = reader.fieldnames
+#         with open(input_file, 'r') as infile, open(output_file, 'w', newline='') as outfile:
+#             reader = csv.DictReader(infile)
+#             fieldnames = reader.fieldnames
 
-            writer = csv.DictWriter(outfile, fieldnames=fieldnames)
-            writer.writeheader()
+#             writer = csv.DictWriter(outfile, fieldnames=fieldnames)
+#             writer.writeheader()
 
-            for row in reader:
-                # Convert quoted strings to numbers where applicable
-                for row[2] in fieldnames:
-                    if row[2].strip().isdigit():
-                        row[2] = int(row[2])
-                    else:
-                        try:
-                            row[2] = float(row[2])
-                        except (ValueError, TypeError):
-                            pass
+#             for row in reader:
+#                 # Convert quoted strings to numbers where applicable
+#                 for row[2] in fieldnames:
+#                     if row[2].strip().isdigit():
+#                         row[2] = int(row[2])
+#                     else:
+#                         try:
+#                             row[2] = float(row[2])
+#                         except (ValueError, TypeError):
+#                             pass
 
-                writer.writerow(row)
+#                 writer.writerow(row)
 
-        self.stdout.write(self.style.SUCCESS(f'Conversion complete. Saved to {output_file}'))
+#         self.stdout.write(self.style.SUCCESS(f'Conversion complete. Saved to {output_file}'))
 

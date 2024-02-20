@@ -11,7 +11,7 @@ from io import TextIOWrapper
 
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login,logout
 import pandas as pd
 
 
@@ -24,9 +24,13 @@ from django.contrib.auth.models import User
 from .helper import send_forget_password_mail
 from django.views import View
 from .models import *
-from .utils import log_activity
+from .utils import log_activity,CustomUserChangeForm
 from .forms import UserProfileForm
 import uuid
+from django.contrib.auth.forms import UserChangeForm
+from django.shortcuts import render
+
+from django.views.decorators.csrf import csrf_protect
 
 
 def login_view(request):
@@ -52,6 +56,13 @@ def login_view(request):
             msg = 'Error validating the form'
 
     return render(request, "accounts/login.html", {"form": form, "msg": msg})
+
+
+def logout_view(request):
+    # Use the logout function to log out the user
+    logout(request)
+    # Redirect to a different page after logout (optional)
+    return redirect('accounts/login.html') 
 
 def csv_view(request):
     uploaded_files = UploadedCSV.objects.filter(user=request.user,is_deleted=False)
@@ -98,7 +109,16 @@ def activity_view(request):
   log_activity = ActivityLog.objects.filter(user=request.user) 
   return render(request, 'accounts/log.html',{'log_activity':log_activity})
  
-
+def user_profile(request):
+    if request.method == 'POST':
+        form = CustomUserChangeForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Your profile was successfully updated.')
+            return redirect('profile')
+    
+        # form = UserChangeForm(request.user)
+    return render(request, 'home/user.html')
 
 def ForgetPassword(request):
     try:
@@ -140,16 +160,7 @@ def ForgetPassword(request):
     
     return render(request, 'accounts/forgetPassword.html')
 
-def user_profile(request):
-    if request.method == 'POST':
-        form = UserProfileForm(request.POST, instance=request.user)
-        if form.is_valid():
-            form.save()
-            return redirect('user')
-    else:
-        form = UserProfileForm(instance=request.user, initial={'username': request.user.username})
 
-    return render(request, 'home/user.html', {'form': form})
 def ForgetPasswordPage(request):
     
     return (request, '/home/accounts/change_password.html')
@@ -186,10 +197,7 @@ def ChangePassword(request , token):
         
     return render(request , 'accounts/change_password.html' , context)
 
-# file_upload_app/views.py
-from django.shortcuts import render
 
-from django.views.decorators.csrf import csrf_protect
 
 
 def create_db(file_path):

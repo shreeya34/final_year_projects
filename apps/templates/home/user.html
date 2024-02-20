@@ -14,53 +14,48 @@
             <h5 class="title">Edit Profile</h5>
           </div>
           <div class="card-body">
-            <form method="post">
+            <form method="post" action="{% url 'profile' %}">
               {% csrf_token %}
               
               <div class="row">
                 <div class="col-md-5 pr-md-1">
                   <div class="form-group">
-                    <label>Company (disabled)</label>
-                    <input type="text" class="form-control" disabled="" placeholder="Company" value="Creative Code Inc.">
+                    <label>Email address (disabled)</label>
+                    <input type="email" class="form-control" placeholder="email" disabled=""  value="{{ user.email }}" name="email">
                   </div>
                 </div>
                 <div class="col-md-3 px-md-1">
                   <div class="form-group">
                     <label>Username</label>
-                    <input type="text" class="form-control" placeholder="Username" value="{{ form.username.value}}">
+                    <input type="text" class="form-control" placeholder="Username" value="{{ user.username}}" name="username">
                   </div>
                 </div>
-                <div class="col-md-4 pl-md-1">
-                  <div class="form-group">
-                    <label for="exampleInputEmail1">Email address</label>
-                    <input type="email" class="form-control" placeholder="email" value="{{ user.email }}">
-                  </div>
-                </div>
+                
               </div>
               
               <div class="row">
                 <div class="col-md-6 pr-md-1">
                   <div class="form-group">
                     <label>First Name</label>
-                    <input type="text" class="form-control" placeholder="First Name" value="{{ user.first_name }}">
+                    <input type="text" class="form-control" placeholder="First Name" value="{{ user.first_name }}" name="first_name">
                   </div>
                 </div>
                 <div class="col-md-6 pl-md-1">
                   <div class="form-group">
                     <label>Last Name</label>
-                    <input type="text" class="form-control" placeholder="Last Name" value="{{ user.last_name }}">
+                    <input type="text" class="form-control" placeholder="Last Name" value="{{ user.last_name }}" name="last_name">
                   </div>
                 </div>
               </div>
               
-              <div class="row">
+              <!-- <div class="row">
                 <div class="col-md-12">
                   <div class="form-group">
                     <label>Address</label>
-                    <input type="text" class="form-control" placeholder="Home Address">
+                    <input type="text" class="form-control" placeholder="Home Address" name="address">
                   </div>
                 </div>
-              </div>
+              </div> -->
               
               <button type="submit" class="btn btn-fill btn-primary">Save</button>
             </form>

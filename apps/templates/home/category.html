@@ -1,52 +1,63 @@
 {% extends "layouts/base.html" %}
 
-{% block title %} Categories {% endblock %} 
+{% block title %} Categories {% endblock %}
 
 <!-- Specific Page CSS goes HERE  -->
 {% block stylesheets %}{% endblock stylesheets %}
 
 {% block content %}
 
-<div style="display: flex; justify-content: center; align-items: flex-end; height: 60vh;">
-    <div class="card card-chart" style="max-width: 1400px; height: 450px; margin-left: 200px;">
-        <div class="card-header">
-            <h5 class="card-category">Total Sales</h5>
-            <h3 class="card-title"><i class="tim-icons icon-bell-55 text-primary"></i> Category Dashboard</h3>
-        </div>
-        <div class="card-body">
-            <div class="chart-area">
-                <canvas id="categorySalesChart"></canvas>
+<div class="content">
+    <div class="row">
+        <div class="col-8">
+            <div class="card card-chart" style="height: 400px;">
+                <div class="card-header">
+                    <h5 class="card-category">Total Sales</h5>
+                    <h3 class="card-title"><i class="tim-icons icon-bell-55 text-primary"></i> Category Dashboard</h3>
+                </div>
+                <div class="card-body">
+                    <div class="chart-area">
+                        <canvas id="categorySalesChart"></canvas>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-</div>
-
-
-<div class="container">
-    <div class="row">
-        <div class="col-lg-2 text-center mt-5 mb-3">
-            <div class="card card-chart mx-auto" style="height: 300px;width:400px">
+        <div class="col-3 text-center">
+            <div class="card card-chart" style="height: 400px;">
                 <div class="card-header">
                     <h4 class="card-title">Categories</h4>
                 </div>
-                <div class="card-body d-flex align-items-center justify-content-center" id="categoryContentBox">
-                    <!-- Content for the category box -->
-                    <!-- Add your content here -->
+                <div class="card-body d-flex flex-wrap" id="categoryContentBox">
+                    <!-- Checkboxes will be added dynamically here -->
                 </div>
                 <button type="button" id="CategorysubmitButton" class="btn btn-primary mt-3">Submit</button>
             </div>
         </div>
-        <div class="col-lg-8">
+    </div>
+
+
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card card-chart">
+                <div class="card-header">
+                    <h5 class="card-category">Total Sales</h5>
+                    <h3 class="card-title"><i class="tim-icons icon-bell-55 text-primary"></i> Category Sales by
+                        Percentage</h3>
+                </div>
+                <div class="card-body" style="height: 600px;">
+                    <div class="chart-area">
+                        <canvas id="categoryPieChart" width="500" height="500"></canvas>
+                    </div>
+                </div>
+            </div>
             <!-- Content for the right side -->
             <!-- Add your content here -->
         </div>
     </div>
 </div>
 
-
-  <style>
-     
-
+<style>
     /* Styles for horizontal layout of categories */
     #categoryContentBox ul {
         list-style-type: none;
@@ -55,16 +66,40 @@
         flex-direction: row;
         justify-content: center;
         flex-wrap: wrap;
-        margin-right: 30px;
+        /* margin-right: 30px; */
     }
 
     #categoryContentBox .category-checkbox-item {
         margin-right: 30px;
         margin-bottom: 30px;
         justify-content: center;
+
+
     }
-    
-  </style>
+
+    #categoryContentBox label {
+        display: block;
+        margin-bottom: 20px;
+        /* Adjust the margin between categories as needed */
+
+    }
+
+    #categoryContentBox input[type="checkbox"] {
+        transform: scale(2.5);
+        /* Adjust the scale factor for the checkbox size */
+        margin-right: 35px;
+        /* Adjust the margin between checkbox and label */
+        margin-left: 35px;
+        vertical-align: 10px;
+        /* Adjust the vertical alignment of the checkbox */
+
+    }
+
+    #categoryContentBox span {
+        vertical-align: 3px;
+        /* Adjust the vertical alignment of the category name */
+    }
+</style>
 
 
 <script>
@@ -77,39 +112,39 @@
         return cookieValue ? decodeURIComponent(cookieValue) : null;
     }
     document.addEventListener('DOMContentLoaded', () => {
-    const submitButton = document.getElementById('CategorysubmitButton');
+        const submitButton = document.getElementById('CategorysubmitButton');
 
-    submitButton.addEventListener('click', async () => {
-        // Get selected categories
-        const selectedCategories = document.querySelectorAll('input[name="selectedCategories"]:checked');
-        // console.log(selectedCategories);
-        // console.log("hey")
-        const selectedCategoryValues = Array.from(selectedCategories).map(checkbox => checkbox.value);
+        submitButton.addEventListener('click', async () => {
+            // Get selected categories
+            const selectedCategories = document.querySelectorAll('input[name="selectedCategories"]:checked');
+            // console.log(selectedCategories);
+            // console.log("hey")
+            const selectedCategoryValues = Array.from(selectedCategories).map(checkbox => checkbox.value);
 
-        const csrftoken = getCookie('csrftoken');
+            const csrftoken = getCookie('csrftoken');
 
-        if (selectedCategoryValues.length > 0) {
-            try {
-                const response = await fetch('/get_category_data', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrftoken,
-                    },
-                    body: JSON.stringify({ selectedCategories: selectedCategoryValues }),
-                });
+            if (selectedCategoryValues.length > 0) {
+                try {
+                    const response = await fetch('/get_category_data', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrftoken,
+                        },
+                        body: JSON.stringify({ selectedCategories: selectedCategoryValues }),
+                    });
 
-                const category = await response.json();
-                console.log(category);
-                commonChart(category);
-            } catch (error) {
-                console.error('Error fetching or processing data:', error);
+                    const category = await response.json();
+                    console.log(category);
+                    commonChart(category);
+                } catch (error) {
+                    console.error('Error fetching or processing data:', error);
+                }
+            } else {
+                alert('Please select at least one category before submitting.');
             }
-        } else {
-            alert('Please select at least one category before submitting.');
-        }
+        });
     });
-});
 
 </script>
 
@@ -133,7 +168,7 @@
             let chartData = [];
 
             const groupedByASIN = data.reduce((result, item) => {
-                const { product_name, asin, _value,_time } = item;
+                const { product_name, asin, _value, _time } = item;
                 // if(!chartLabels.contains(_time)){
                 chartLabels.push(_time);
                 // }
@@ -152,7 +187,7 @@
                 asin,
                 values,
             }));
-            
+
             // console.log(uniqueDatesArray);
             var dateObjects = chartLabels.map(function (timestamp) {
                 return new Date(timestamp);
@@ -178,12 +213,12 @@
                 return date >= startDate && date <= endDate;
             });
             var formattedLabels = dateObjects.map(function (date) {
-                    return date.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+                return date.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
             });
             var uniqueDatesSet = new Set(formattedLabels);
             var uniqueDatesArray = Array.from(uniqueDatesSet);
             // console.log(filteredLabels);
-
+            const piedatasets = {}
             const datasets = asinArray.map(({ asin, values }) => {
                 // Customize this part based on your requirements
                 const dynamicBorderColor = getRandomColor();
@@ -197,13 +232,25 @@
                     // },// Customize the color as needed
                     data: values.map(({ _time, product_name, _value }) => (_value)),
                 };
-
+                // Create an object to store the sum of _value for each product_name
                 return dataset;
             });
+            // console.log("datasets");
+            // console.log(datasets);
 
-            console.log(datasets);
+            const productSumObject = datasets.reduce((accumulator, currentValue) => {
+                const { product_name, _value } = currentValue;
 
+                // Check if the product_name is already in the accumulator
+                if (!accumulator[product_name]) {
+                    accumulator[product_name] = 0;
+                }
 
+                // Add the current _value to the sum for the product_name
+                accumulator[product_name] += _value;
+
+                return accumulator;
+            }, {});
             const gradientChartOptionsConfigurationWithTooltipPurple = {
                 maintainAspectRatio: false,
                 legend: {
@@ -252,7 +299,7 @@
                         //     unit: 'day',
                         //     round: 'week'
                         // }
-                       
+
                     }]
                 }
 
@@ -261,14 +308,15 @@
 
 
             let ctx = document.getElementById("categorySalesChart").getContext('2d');
-            try{
-            
-                if (window.categorySalesChart) {
+
+            try {
+
+                if (window.categorySalesChart ) {
                     // Destroy the existing chart instance
                     window.categorySalesChart.destroy();
                 }
-            }catch(e){
-                console.log("categorySalesChart not found",e);
+            } catch (e) {
+                console.log("categorySalesChart not found", e);
             }
             var gradientStroke = ctx.createLinearGradient(0, 230, 0, 50);
 
@@ -284,12 +332,11 @@
                 options: gradientChartOptionsConfigurationWithTooltipPurple
             };
             window.categorySalesChart = new Chart(ctx, config);
-
         } catch (error) {
             console.error('Error fetching or processing data:', error);
         }
     }
-    </script>
+</script>
 
 
 <script>
@@ -322,6 +369,69 @@
             } catch (error) {
                 console.error('Error fetching or processing data:', error);
             }
+        } catch (error) {
+            console.error('Error fetching or processing data:', error);
+        }
+    }
+
+    async function fetchAllCategorySalesCount() {
+        try {
+            const response = await fetch('/get_all_category_sales_count'); // Replace with your API endpoint
+            const jsonData = await response.json();
+            console.log(jsonData);
+            const total = Object.values(jsonData).reduce((acc, value) => acc + value, 0);
+
+            // Step 2: Calculate Percentages
+            const percentages = {};
+            for (const category in jsonData) {
+                percentages[category] = ((jsonData[category] / total) * 100).toFixed(2);
+            }
+            console.log("percent");
+            console.log(percentages);
+            // if (window.categoryPieChart) {
+            //         // Destroy the existing chart instance
+            //         window.categoryPieChart.destroy();
+            // }
+
+            // Step 3: Render Pie Chart using Chart.js
+            const ctx = document.getElementById('categoryPieChart').getContext('2d');
+
+            const pieChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(jsonData),
+                    datasets: [{
+                        data: Object.values(percentages),
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.8)',
+                            'rgba(54, 162, 235, 0.8)',
+                            'rgba(255, 206, 86, 0.8)',
+                            'rgba(75, 192, 192, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgba(255, 99, 132, 1)',
+                            'rgba(54, 162, 235, 1)',
+                            'rgba(255, 206, 86, 1)',
+                            'rgba(75, 192, 192, 1)'
+                        ],
+                        hoverOffset: 3,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: false,
+                    legend: {
+                        position: 'bottom',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Category Distribution'
+                    },
+                    aspectRatio: 1, // Set the aspect ratio (1 for a square chart)
+                    maintainAspectRatio: false // Set to false to allow manual control of the chart size
+                }
+            });
+
         } catch (error) {
             console.error('Error fetching or processing data:', error);
         }
@@ -362,6 +472,7 @@
 
     document.addEventListener('DOMContentLoaded', function () {
         fetchAllCategoryData();
+        fetchAllCategorySalesCount();
     });
 </script>
 
