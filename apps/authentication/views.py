@@ -8,6 +8,7 @@ Copyright (c) 2019 - present AppSeed.us
 import csv
 from datetime import datetime
 from io import TextIOWrapper
+import os
 
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect
@@ -18,6 +19,7 @@ import pandas as pd
 # from apps.authentication.models import Profile
 
 from apps.authentication.models import Profile
+from core import settings
 from .forms import LoginForm, SignUpForm
 from django.contrib import messages
 from django.contrib.auth.models import User
@@ -27,6 +29,8 @@ from .models import *
 from .utils import log_activity,CustomUserChangeForm
 from .forms import UserProfileForm
 import uuid
+from core.influx import influx_client
+from influxdb_client.client.write_api import SYNCHRONOUS
 from django.contrib.auth.forms import UserChangeForm
 from django.shortcuts import render
 
@@ -150,6 +154,7 @@ def ForgetPassword(request):
             
             if send_email:
                 messages.success(request, 'An email is sent.')
+                return render(request, 'accounts/forgetPassword.html')
             else:
                 messages.info(request, message='Something went wrong while sending the email.')
             
@@ -175,16 +180,16 @@ def ChangePassword(request , token):
         
         if request.method == 'POST':
             new_password = request.POST.get('new_password')
-            confirm_password = request.POST.get('reconfirm_password')
+            confirm_password = request.POST.get('confirm_password')
             user_id = request.POST.get('user_id')
             
             if user_id is  None:
                 messages.success(request, 'No user id found.')
-                return redirect(f'/change_password/{token}/')
+                return redirect(f'/change-password/{token}/')
                 
             if  new_password != confirm_password:
-                messages.success(request, 'both should  be equal.')
-                return redirect(f'/change_password/{token}/')
+                messages.success(request, 'Password Confirmation do not match.')
+                return redirect(f'/change-password/{token}/')
             
             user_obj = User.objects.get(id = user_id)
             user_obj.set_password(new_password)
@@ -214,9 +219,58 @@ def csv_upload_view(request):
         create_db(obj.file)
     return render (request,'home/index.html')
 
+def handle_uploaded_file(uploaded_file):
+    destination_directory = os.path.join(settings.BASE_DIR)
+
+    # Ensure the destination directory exists; create if it doesn't
+    # os.makedirs(destination_directory, exist_ok=True)
+
+    # Define the file path in the destination directory
+    try:
+        destination_file_path = os.path.join(destination_directory, uploaded_file)
+        os.unlink(destination_file_path)
+        return True
+    except Exception as e:
+        pass
+    # Move the uploaded file to the destination directory
+    # with open(destination_file_path, 'wb') as destination:
+    #     for chunk in uploaded_file.chunks():
+    #         destination.write(chunk)
+    # return destination_file_path
+
 def delete_entry(request, entry_id):
     try:
+        user_name = request.session.get('username')
         entry = UploadedCSV.objects.get(id=entry_id)
+
+        uploaded_file = entry.csv_file.name
+
+        if not uploaded_file:
+            messages.error(request, 'Invalid file name')
+            return redirect('csv_view')
+            # return JsonResponse(data={"status": "error", "message": "Invalid file"}, safe=False)
+
+        handle_uploaded_file(uploaded_file)
+
+        # query_api = influx_client.query_api()
+
+        # Construct delete query based on the file name
+        # delete_query = f'from(bucket: "new_amazon") \
+        #                 |> filter(fn: (r) => r["_measurement"] == "ecommerce_products") \
+        #                 |> filter(fn: (r) => r["user"] == "{user_name}" and r["files"] == "{entry_id}") \
+        #                 |> drop()'
+        
+        # delete_query = f'''
+        #     import "influxdata/influxdb/monitor"
+        #     monitor.from(bucket: "new_amazon")\
+        #         |> filter(fn: (r) => r["_measurement"] == "ecommerce_products" and r["user"] == "{user_name}" and r["files"] == "{entry_id}")\
+        #         |> drop()
+        # '''
+
+        # Execute the delete query
+        # result = query_api.query(query=delete_query, org='93eb79fe52548977')
+        # print("Delete Result: {0}".format(result))
+        log_activity(request.user, "Deleted a file") 
         entry.is_deleted = True
         entry.save()
         # entry.delete()

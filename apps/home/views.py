@@ -279,6 +279,8 @@ def upload_to_influxdb(request):
                     write_api.write(bucket=BUCKET_NAME, org=ORG_NAME, record=point)
                 except Exception as e:
                     print(f"Failed to write: {e}")
+                    messages.error(request,f"Exception occured with message: {str(e)} please review and re-upload the file")
+                    return redirect('/')
         log_activity(request.user, "Uploaded a file")  # Log the activity     
         messages.success(request,"Your File is Successfully Uploaded!")
         return redirect('/')
@@ -286,6 +288,8 @@ def upload_to_influxdb(request):
     # return JsonResponse({'success':True, 'message':"Your File is Successfully Uploaded!"})
     return render('/templates/includes/navigation.html') 
 
+
+#not-used
 def delete_data_by_file(request):
     user_name = request.session.get('username')
 
@@ -318,6 +322,7 @@ def delete_data_by_file(request):
     return JsonResponse(data={"status": "error", "message": str(e)}, safe=False)
     
 def submitData(request):
+    start_time, end_time = get_cookie_dates(request)
     if request.method == 'POST':
         try:
             # Retrieve necessary data from the form data
@@ -332,7 +337,7 @@ def submitData(request):
                 # Your InfluxDB query
                 query_api = influx_client.query_api()
                 query = f'from(bucket: "new_amazon")\
-                    |> range(start: 2023-12-13T08:49:26.897825+00:00, stop: 2024-01-01T08:49:26.897825+00:00)\
+                    |> range(start: {start_time}, stop: {end_time})\
                     |> filter(fn: (r) => r["_measurement"] == "ecommerce_products")\
                     |> filter(fn: (r) => r["user"] == "{user_name}")\
                     |> filter(fn: (r) => {asin_condition})\
@@ -420,15 +425,16 @@ def get_asin(request):
     asin = request.GET.get('asin')
     product_name = request.GET.get('product_name')
     user_name = request.session.get('username')
+    start_time, end_time = get_cookie_dates(request)
+
     
     query_api = influx_client.query_api()
     if asin not in ['','null']:
-        query = 'from(bucket: "new_amazon")\
-            |> range(start: 2017-12-13T08:49:26.897825+00:00, stop: 2024-12-30T08:49:26.897825+00:00)\
+        query = f'from(bucket: "new_amazon")\
+            |> range(start: {start_time}, stop: {end_time})\
             |> filter(fn: (r) => r["_measurement"] == "ecommerce_products")\
-            |> filter(fn: (r) => r["user"] == "{}")\
-            |> yield(name: "mean")'.format(user_name)
-            
+            |> filter(fn: (r) => r["user"] == "{user_name}")\
+            |> yield(name: "mean")'            
     result = query_api.query(query=query,org='93eb79fe52548977')
     json_data = []
     for table in result:
@@ -442,14 +448,16 @@ def get_asin(request):
 def get_all_category_sales_count(request):
     user_name = request.session.get('username')        
     query_api = influx_client.query_api()
-    query = 'from(bucket: "new_amazon")\
-    |> range(start: 2017-12-13T08:49:26.897825+00:00, stop: 2024-02-01T08:49:26.897825+00:00)\
+    start_time, end_time = get_cookie_dates(request)
+
+    query = f'from(bucket: "new_amazon")\
+    |> range(start: {start_time}, stop: {end_time})\
     |> filter(fn: (r) => r["_measurement"] == "ecommerce_products")\
-    |> filter(fn: (r) => r["user"] == "{}")\
+    |> filter(fn: (r) => r["user"] == "{user_name}")\
     |> filter(fn: (r) => r["_field"] == "sale_price")\
     |> group(columns: ["category"])\
     |> count()\
-    |> yield(name: "count")'.format(user_name)
+    |> yield(name: "count")'
     result = query_api.query(query=query,org='93eb79fe52548977')
     json_data = dict()
     for table in result:
@@ -464,15 +472,16 @@ def get_all_category_sales_count(request):
 
 
 def get_all_category_data(request):
-        user_name = request.session.get('username')        
+        user_name = request.session.get('username')  
+        start_time, end_time = get_cookie_dates(request)
         query_api = influx_client.query_api()
-        query = 'from(bucket: "new_amazon")\
-        |> range(start: 2017-12-13T08:49:26.897825+00:00, stop: 2024-12-30T08:49:26.897825+00:00)\
+        query = f'from(bucket: "new_amazon")\
+        |> range(start: {start_time}, stop: {end_time})\
         |> filter(fn: (r) => r["_measurement"] == "ecommerce_products")\
-        |> filter(fn: (r) => r["user"] == "{}")\
+        |> filter(fn: (r) => r["user"] == "{user_name}")\
         |> group(columns: ["category"])\
         |> last()\
-        |> yield(name: "mean")'.format(user_name)
+        |> yield(name: "mean")'
                     
         result = query_api.query(query=query,org='93eb79fe52548977')
         json_data = []
@@ -488,6 +497,8 @@ def get_all_category_data(request):
 def get_category_data_by_name(request):
     user_name = request.session.get('username')
     category = request.GET.get('category')
+    start_time, end_time = get_cookie_dates(request)
+
     
     if request.method == 'POST':
         try:
@@ -503,7 +514,7 @@ def get_category_data_by_name(request):
 
                 query_api = influx_client.query_api()
                 query = f'from(bucket: "new_amazon")\
-                    |> range(start: 2023-12-13T08:49:26.897825+00:00, stop: 2023-12-19T08:49:26.897825+00:00)\
+                    |> range(start: {start_time}, stop: {end_time})\
                     |> filter(fn: (r) => r["_measurement"] == "ecommerce_products")\
                     |> filter(fn: (r) => r["_field"] == "actual_price")\
                     |> filter(fn: (r) => r["category"] =~ /{ "|".join(selected_categories) }/) \
@@ -518,57 +529,63 @@ def get_category_data_by_name(request):
                     for record in table.records:
                         record_dict = record.values
                         json_data.append(record_dict)
-                #arima model code, should be separated from this function later.
-                df = pd.DataFrame(json_data)
-                df['_time'] = pd.to_datetime(df['_time'])
-                # df.set_index('_time', inplace=True)
-                time_series_data = df['_value']
-                try:
-                    # aggregated_df = df.groupby('_time')['_value'].mean().reset_index()
-                    arima_model = auto_arima(time_series_data, seasonal=True)  # Assuming weekly seasonality
-                    forecast, conf_int = arima_model.predict(n_periods=7, return_conf_int=True)
-                except Exception as e:
-                    pass
-                    
-                #forecast will contain the predicted values for the next 7 days
-                #conf_int will contain the corresponding confidence intervals. 
-                #The confidence intervals provide an indication of the uncertainty associated with each forecasted value. 
-                #The narrower the interval, the more confident the model is in its prediction.
+               
                 print("Result: {0}".format(json_data))
                 return JsonResponse(data=json_data, safe=False)
         except Exception as e:
                 messages.error(request, f"Error in executing data: {e}")
-                        
-# class Command(BaseCommand):
-#     help = 'Convert quoted string values to numerical data types'
+                
+def predict_sales_using_arima(request):
+    user_name = request.session.get('username')
+    category = request.GET.get('category')
+    start_time, end_time = get_cookie_dates(request)
 
-#     def add_arguments(self, parser):
-#         parser.add_argument('input_file', type=str, help='Input CSV file')
-#         parser.add_argument('output_file', type=str, help='Output CSV file')
+    
+    
+    # Retrieve necessary data from the form data
+    decoded_body = request.body.decode('utf-8')
+    if 'application/json' in request.content_type:
+        json_data = json.loads(decoded_body)
+        selected_categories = json_data.get('selectedCategories')
 
-#     def handle(self, *args, **options):
-#         input_file = options['input_file']
-#         output_file = options['output_file']
+    if not selected_categories:
+        return JsonResponse({'error': 'No category provided'}, status=400)
 
-#         with open(input_file, 'r') as infile, open(output_file, 'w', newline='') as outfile:
-#             reader = csv.DictReader(infile)
-#             fieldnames = reader.fieldnames
 
-#             writer = csv.DictWriter(outfile, fieldnames=fieldnames)
-#             writer.writeheader()
+    query_api = influx_client.query_api()
+    query = f'from(bucket: "new_amazon")\
+        |> range(start: {start_time}, stop: {end_time})\
+        |> filter(fn: (r) => r["_measurement"] == "ecommerce_products")\
+        |> filter(fn: (r) => r["_field"] == "actual_price")\
+        |> filter(fn: (r) => r["category"] =~ /{ "|".join(selected_categories) }/) \
+        |> filter(fn: (r) => r["user"] == "{user_name}")\
+        |> group(columns: ["category"])\
+        |> yield(name: "mean")'
 
-#             for row in reader:
-#                 # Convert quoted strings to numbers where applicable
-#                 for row[2] in fieldnames:
-#                     if row[2].strip().isdigit():
-#                         row[2] = int(row[2])
-#                     else:
-#                         try:
-#                             row[2] = float(row[2])
-#                         except (ValueError, TypeError):
-#                             pass
-
-#                 writer.writerow(row)
-
-#         self.stdout.write(self.style.SUCCESS(f'Conversion complete. Saved to {output_file}'))
+    result = query_api.query(query=query, org='93eb79fe52548977')
+    
+    json_data = []
+    for table in result:
+        for record in table.records:
+            record_dict = record.values
+            json_data.append(record_dict)
+    
+     #arima model code, should be separated from this function later.
+    df = pd.DataFrame(json_data)
+    df['_time'] = pd.to_datetime(df['_time'])
+    # df.set_index('_time', inplace=True)
+    time_series_data = df['_value']
+    try:
+        # aggregated_df = df.groupby('_time')['_value'].mean().reset_index()
+        arima_model = auto_arima(time_series_data, seasonal=True)  # Assuming weekly seasonality
+        forecast, conf_int = arima_model.predict(n_periods=7, return_conf_int=True)
+    except Exception as e:
+        pass
+                    
+    #forecast will contain the predicted values for the next 7 days
+    #conf_int will contain the corresponding confidence intervals. 
+    #The confidence intervals provide an indication of the uncertainty associated with each forecasted value. 
+    #The narrower the interval, the more confident the model is in its prediction.
+    
+                           
 

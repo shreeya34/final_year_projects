@@ -27,8 +27,8 @@
 
             <div class="card card-chart" style="height: 400px;">
                 <div class="card-header ">
-                    <h5 class="card-category">Total Sales</h5>
-                    <h3 class="card-title"><i class="tim-icons icon-bell-55 text-primary"></i> Weekly Dashboard</h3>
+                    <!-- <h5 class="card-category">Total Sales</h5> -->
+                    <h3 class="card-title"><i class="tim-icons icon-bell-55 text-primary"></i> Total Sales Dashboard</h3>
                 </div>
                 <div class="card-body">
                     <div class="chart-area">
@@ -308,7 +308,7 @@
             }));
 
             
-            console.log(uniqueDatesArray);
+            // console.log(uniqueDatesArray);
             var dateObjects = chartLabels.map(function (timestamp) {
                 return new Date(timestamp);
             });
@@ -449,16 +449,39 @@
             console.log(annualData);
 
             let chartLabels = [];
-            let chartData = [];
+            // let chartData = [];
 
             // Extracting time and value data from jsonData
             for (let i = 0; i < annualData.length; i++) {
-                chartLabels.push(annualData[i]._time); // Extracting _time property
-                chartData.push(annualData[i]._value); // Extracting _value property
+                // /chartLabels.push('ASIN: ' + annualData[i].asin + ' recorded at ' + annualData[i]._time); // Extracting _time property
+                if(!chartLabels.includes(annualData[i]._time)){
+                    chartLabels.push(annualData[i]._time);
+                }
+                 // Extracting _time property
+                // chartData.push(annualData[i]._value); // Extracting _value property
 
             }
-            console.log(chartData)
-            console.log(chartLabels)
+            chartLabels.sort((a, b) => new Date(a) - new Date(b));
+            const datasets = annualData.map(({ asin, _time, product_name, _value }) => {
+                // Customize this part based on your requirements
+                const dynamicBorderColor = getRandomColor();
+
+                const dataset = {
+                    label: `ASIN: ${asin} Product: ${product_name}`,
+                    backgroundColor: 'rgba(225, 78, 202, 0.8)', // Red color with 80% opacity
+                    hoverBackgroundColor: 'rgba(225, 78, 202, 1)', // Color on hover
+                    borderWidth: 1,
+                    // backgroundColor: {
+                    //     fill: '#FFC0CB'
+                    // },// Customize the color as needed
+                    data: [_value],
+                };
+
+                return dataset;
+            });
+
+            // console.log(chartData)
+            // console.log(chartLabels)
 
             const gradientChartOptionsConfigurationWithTooltipPurple = {
                 maintainAspectRatio: false,
@@ -519,13 +542,7 @@
                 type: 'bar',
                 data: {
                     labels: chartLabels,
-                    datasets: [{
-                        label: '# of Votes',
-                        data: chartData,
-                        borderWidth: 1,
-                        backgroundColor: 'rgba(225, 78, 202, 0.8)', // Red color with 80% opacity
-                        hoverBackgroundColor: 'rgba(225, 78, 202, 1)', // Color on hover
-                    }]
+                    datasets: datasets
                 },
                 options: gradientChartOptionsConfigurationWithTooltipPurple
             };

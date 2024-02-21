@@ -9,7 +9,7 @@
                 </button>
             </div>
             <!-- <a class="navbar-brand" href="/">Dashboard</a> -->
-            <div class="dropdown">
+            <!-- <div class="dropdown">
                 <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton"
                     data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     Graph
@@ -43,7 +43,7 @@
 
 
                 </div>
-            </div>
+            </div> -->
         </div>
 
         <style>
@@ -135,19 +135,30 @@
                     $(function () {
 
                         var start = moment().subtract(180, 'days');
-                        var end = moment();
+                        var end =  moment();
+                        if(getCookie('start_time') && getCookie('end_time')){
+                            let cookie_set_start_time = getCookie('start_time');
+                            let cookie_set_end_time = getCookie('end_time');
+                            let start_provided_date = moment(cookie_set_start_time);
+                            let end_provided_date = moment(cookie_set_end_time);
 
+                            let  current_date = moment();
+                            let start_diff = current_date.diff(start_provided_date, 'days');
+                            start = moment().subtract(start_diff, 'days');
+                            let end_diff = current_date.diff(end_provided_date, 'days');
+                            end = moment().subtract(end_diff, 'days');
+                        }
+                        // console.log("heydate");
+                        // console.log(moment().subtract(180, 'days'));
+                        // console.log(moment(getCookie('start_time')).toDate());
                         function cb(start, end) {
                             $('#reportrange span').html(start.format('MMMM D, YYYY') + ' - ' + end.format('MMMM D, YYYY'));
 
                             $('#reportrange').on('apply.daterangepicker', function (ev, picker) {
-
-
                                 $('#time-range-form').submit();
                             });
                             // Retrieve the value using getElementById
-                            start_time = getCookie('start_time') || start;
-                            end_time = getCookie('end_time') || end;
+                           
                             document.getElementById('start_time').value = start;
                             document.getElementById('end_time').value = end;
                         }
