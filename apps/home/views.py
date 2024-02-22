@@ -469,6 +469,8 @@ def get_all_category_sales_count(request):
     print("Result: {0}".format(json_data))
     return JsonResponse(data=json_data,safe=False)
             
+def load_category_page(request):
+    return render(request, "home/category.html")
 
 
 def get_all_category_data(request):
