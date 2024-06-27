@@ -158,26 +158,27 @@
             </div>
             <script>
                 function getCookie(name) {
-                    const cookieValue = document.cookie
-                        .split('; ')
-                        .find(row => row.startsWith(name + '='))
-                        .split('=')[1];
-
-                    return cookieValue ? decodeURIComponent(cookieValue) : null;
+                    const cookies = document.cookie.split('; ');
+                    const cookie = cookies.find(row => row.startsWith(name + '='));
+                    if (cookie) {
+                        return decodeURIComponent(cookie.split('=')[1]);
+                    }
+                    return null;
                 }
+            
                 document.addEventListener('DOMContentLoaded', () => {
                     const submitButton = document.getElementById('submitButton');
-
+            
                     submitButton.addEventListener('click', async () => {
                         // Get selected ASIN and aggregate function values
                         const selectedAsin = document.querySelectorAll('input[id^="asinCheckbox"]:checked');
                         const selectedAsinValues = Array.from(selectedAsin).map(checkbox => checkbox.value);
                         const selectedStatistic = document.querySelector('input[name="selectedStatistic"]:checked').value;
-
+            
                         console.log(selectedAsinValues);
                         console.log(selectedStatistic);
                         const csrftoken = getCookie('csrftoken');
-
+            
                         // Make sure both ASIN and aggregate function are selected
                         if (selectedAsinValues && selectedStatistic) {
                             // Create a FormData object to send data to the server
@@ -189,10 +190,9 @@
                                     headers: {
                                         'Content-Type': 'application/json',
                                         'X-CSRFToken': csrftoken,
-
                                     },
                                 });
-
+            
                                 const data = await stats_response.json();
                                 console.log(data);
                                 commonChart(data);
@@ -205,38 +205,35 @@
                         }
                     });
                 });
-            </script>
-
-
-
-            <script>
+            
                 function fetchAnnualSalesData(asin) {
+                    console.log(`hello final ${asin}`);
                     const asinData = fetch(`/getAsinData?asin=${asin}`)
                         .then(response => response.json())
                         .then(asinData => {
                             console.log(asinData);
-
+            
                             let asinContentBox = document.getElementById("asinContentBox");
-
+            
                             // Extracting unique ASINs from jsonData using Set
                             let uniqueAsinSet = new Set();
                             let asinHtml = "<ul>";
-
+            
                             for (let i = 0; i < asinData.length; i++) {
                                 const currentAsin = asinData[i].asin;
                                 const productName = asinData[i].product_name;
-
+            
                                 // Check if the ASIN is not in the set, then add it to the HTML
                                 if (!uniqueAsinSet.has(currentAsin)) {
                                     asinHtml += `<li class="asin-checkbox-item"><input type="checkbox" id="asinCheckbox${i}" name="selectedAsin" value="${currentAsin}"><label for="selectedAsin${i}">${productName} (${currentAsin})</label></li>`;
-
+            
                                     // Add the ASIN to the set to mark it as added
                                     uniqueAsinSet.add(currentAsin);
                                 }
                             }
-
+            
                             asinHtml += "</ul>";
-
+            
                             // Set the content of the asinContentBox
                             asinContentBox.innerHTML = asinHtml;
                         })
@@ -244,13 +241,10 @@
                             console.error('Error fetching or processing data:', error);
                         });
                 }
-
-               
+            
                 fetchAnnualSalesData('asin_parameter');
-
-
-
             </script>
+            
 
         </div>
     </div>

@@ -105,13 +105,17 @@ def get_cookie_dates(request):
     end_time = datetime.now()
 
     # Calculate the start time (last one month)
-    start_time = end_time - timedelta(days=180)
+    start_time = end_time - timedelta(days=360)
 
     # Format the start time and end time as strings in '%Y-%m-%d %H:%M:%S' format
     start_time_str = start_time.strftime('%Y-%m-%dT%H:%M:%SZ')
     end_time_str = end_time.strftime('%Y-%m-%dT%H:%M:%SZ')
     start_time = request.COOKIES.get('start_time', start_time_str)
     end_time = request.COOKIES.get('end_time', end_time_str)
+    # cookie_expiration = datetime.now() + timedelta(days=30)
+
+    # request.set_cookie('start_time',start_time_str,expires=cookie_expiration)
+    # request.set_cookie('end_time',end_time_str,expires=cookie_expiration)
     return start_time, end_time
 
 def search_products(request): 

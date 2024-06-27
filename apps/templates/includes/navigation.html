@@ -182,12 +182,15 @@
                     });
 
                     function getCookie(name) {
-                        const cookieValue = document.cookie
+                        if(document.cookie){
+                            const cookieValue = document.cookie
                             .split('; ')
                             .find(row => row.startsWith(name + '='))
                             .split('=')[1];
-                        console.log("mycookie");
-                        return cookieValue ? decodeURIComponent(cookieValue) : null;
+                            console.log("mycookie");
+                            return cookieValue ? decodeURIComponent(cookieValue) : null;
+                        }
+                        return null
                     }
                 </script>
 
